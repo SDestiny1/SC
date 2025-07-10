@@ -7,7 +7,8 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\GroupController;
-
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CalendarController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -34,28 +35,31 @@ Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('regi
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
 Route::resource('students', controller: StudentController::class);
 
 
-Route::resource('teachers', TeacherController::class);
+Route::resource('teachers', controller: TeacherController::class);
 
 
 Route::resource('posts', PostController::class)->only(['index', 'destroy']);
 
 
-Route::get('/groups', [GroupController::class, 'index'])->name('groups.index');
-Route::resource('grups', GroupController::class);
+Route::resource('groups', GroupController::class);
 
 // Ruta para configuración
 Route::get('/settings', function () {
     return view('settings');
 })->name('settings');
+
 Route::put('/settings', [App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
 
 
-
 Route::post('/comments', [CommentController::class, 'store'])->name('comments.store');
+
+
+Route::get('/calendario', function () {
+    return view('calendario.index');
+})->name('calendario.index');

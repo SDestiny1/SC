@@ -17,14 +17,14 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'correo' => 'required|email',
+            '_id' => 'required|email',
             'password' => 'required'
         ]);
 
-        $user = User::where('correo', $request->correo)->first();
+        $user = User::where('_id', $request->_id)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['correo' => 'Credenciales incorrectas'])->withInput();
+            return back()->withErrors(['_id' => 'Credenciales incorrectas'])->withInput();
         }
 
         Auth::login($user, $request->has('remember'));

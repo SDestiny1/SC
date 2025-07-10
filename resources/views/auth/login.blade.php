@@ -34,7 +34,7 @@
             display: block;
             margin-bottom: 0.25rem;
         }
-        input[type="email"],
+        input[type="_id"],
         input[type="password"] {
             width: 100%;
             padding: 0.6rem;
@@ -74,7 +74,7 @@
 
     <div class="form-group">
         <label for="correo">Correo Electrónico</label>
-        <input id="correo" type="email" name="correo" value="{{ old('correo') }}" required autofocus>
+        <input id="_id" type="email" name="_id" value="{{ old('_id') }}" required autofocus>
         @error('correo')
             <div class="error">{{ $message }}</div>
         @enderror

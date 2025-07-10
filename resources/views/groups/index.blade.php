@@ -6,7 +6,6 @@
 <div class="container mt-4">
     <h2 class="mb-4">Gestión de Grupos</h2>
 
-    <a href="{{ route('grupos.create') }}" class="btn btn-success mb-3">➕ Crear nuevo grupo</a>
 
     @if ($grupos->isEmpty())
         <p>No hay grupos registrados.</p>
@@ -40,9 +39,9 @@
                             </span>
                         </td>
                         <td>
-                            <a href="{{ route('grupos.show', $grupo->_id) }}" class="btn btn-info btn-sm">👁️ Ver</a>
-                            <a href="{{ route('grupos.edit', $grupo->_id) }}" class="btn btn-warning btn-sm">✏️ Editar</a>
-                            <form action="{{ route('grupos.destroy', $grupo->_id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar este grupo?');">
+                            <a href="{{ route('groups.show', $grupo->_id) }}" class="btn btn-info btn-sm">👁️ Ver</a>
+                            <a href="{{ route('groups.edit', $grupo->_id) }}" class="btn btn-warning btn-sm">✏️ Editar</a>
+                            <form action="{{ route('groups.destroy', $grupo->_id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar este grupo?');">
                                 @csrf
                                 @method('DELETE')
                                 <button class="btn btn-danger btn-sm">🗑️ Eliminar</button>

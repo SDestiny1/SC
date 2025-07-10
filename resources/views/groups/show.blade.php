@@ -19,6 +19,6 @@
         <strong>Activo:</strong> {{ $grupo->activo ? 'Sí' : 'No' }}<br>
     </div>
 
-    <a href="{{ route('grupos.index') }}" class="btn btn-secondary">← Volver</a>
+    <a href="{{ route('groups.index') }}" class="btn btn-secondary">← Volver</a>
 </div>
 @endsection

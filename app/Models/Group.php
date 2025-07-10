@@ -1,25 +1,30 @@
 <?php
-// app/Models/Group.php
+
 namespace App\Models;
 
 use Jenssegers\Mongodb\Eloquent\Model;
 
 class Group extends Model
 {
-    protected $collection = 'groups'; // o 'grupos' si así la llamaste
-    protected $primaryKey = '_id';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
+    protected $connection = 'mongodb';
+    protected $collection = 'grupo';
+    
     protected $fillable = [
-        '_id', 'nombreGrupo', 'turno', 'nivel', 'semestre',
-        'ciclo_id', 'carrera_id', 'activo'
+        'nombre',
+        'carrera',
+        'semestre',
+        'activo'
     ];
-
-public function carrera()
-{
-    return $this->belongsTo(Carrera::class, 'carrera_id', '_id');
+    
+    // Relación con estudiantes
+    public function students()
+    {
+        return $this->hasMany(User::class, 'grupoID', '_id');
+    }
+        public function carrera()
+    {
+        return $this->belongsTo(Carrera::class, 'carreraID', '_id');
+    }
 }
 
 
-}

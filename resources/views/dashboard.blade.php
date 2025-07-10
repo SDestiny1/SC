@@ -1,379 +1,200 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- Elimina el container-fluid o modifícalo así: -->
-<div class="container-fluid px-0">
-    <!-- Cards Superiores -->
-    <div class="row mx-0">
-        <div class="col-xl-4 col-md-6 mb-4 px-3">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                ALUMN'S PUBLISH</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">$53,000</div>
-                            <div class="mt-2 text-success small">
-                                <span class="fas fa-arrow-up"></span>
-                                +55% since yesterday
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
+    <!-- Contenido principal -->
+    <main class="main-content">
+        <header class="header">
+            <h1>Dashboard Administrativo</h1>
+            <div class="user-info">
+                <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Usuario">
+                <span>María González</span>
+            </div>
+        </header>
+
+                <!-- Widgets principales -->
+        <div class="dashboard-widgets">
+            <!-- Usuarios Activos -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">Usuarios Activos</h3>
+                    <div class="widget-icon">
+                        <i class="fas fa-users"></i>
                     </div>
+                </div>
+                    <div class="widget-value">{{ $activeUsersCount ?? 0 }}</div>
+                <div class="widget-footer">
+                    <i class="fas fa-user-check"></i>
+                    <span>Usuarios activos en la plataforma</span>
+                </div>
+            </div>
+
+            <!-- Publicaciones Alumnos -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">Publicaciones por Alumnos</h3>
+                    <div class="widget-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                </div>
+                <div class="widget-value">{{ $studentPublicationsCount ?? 0}}</div>
+                <div class="widget-footer">
+                    <i class="fas fa-pencil-alt"></i>
+                    <span>Publicaciones activas de alumnos</span>
+                </div>
+            </div>
+
+            <!-- Publicaciones Maestros -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">Publicaciones por Maestros</h3>
+                    <div class="widget-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                </div>
+                <div class="widget-value">{{ $teacherPublicationsCount ?? 0}}</div>
+                <div class="widget-footer">
+                    <i class="fas fa-book"></i>
+                    <span>Publicaciones activas de maestros</span>
+                </div>
+            </div>
+
+            <!-- Noticias Activas -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">Noticias Activas</h3>
+                    <div class="widget-icon">
+                        <i class="fas fa-newspaper"></i>
+                    </div>
+                </div>
+                <div class="widget-value">{{ $activeNewsCount ?? 0}}</div>
+                <div class="widget-footer">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Noticias activas en el sistema</span>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-md-6 mb-4 px-3">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                TEACHER'S PUBLISH</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">2,300</div>
-                            <div class="mt-2 text-success small">
-                                <span class="fas fa-arrow-up"></span>
-                                +3% since last week
-                            </div>
+        <!-- Secciones principales -->
+        <div class="main-sections">
+            <div class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-clock"></i>
+                    Actividad Reciente
+                </h2>
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Contenido</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($recentActivities as $activity)
+                        <tr>
+                            <td>{{ $activity['user'] }}</td>
+                            <td>
+                                @if($activity['type'] == 'noticia')
+                                    <i class="fas fa-newspaper"></i> Noticia:
+                                @else
+                                    <i class="fas fa-comment"></i> Publicación:
+                                @endif
+                                {{ \Illuminate\Support\Str::limit($activity['content'], 50) }}
+                            </td>
+                            <td>{{ \Carbon\Carbon::parse($activity['date'])->format('d/m/Y H:i') }}</td>
+                            <td><span class="status approved">{{ $activity['status'] }}</span></td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4">No hay actividades recientes</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-bell"></i>
+                    Notificaciones
+                </h2>
+                <ul class="notification-list">
+                    <li class="notification-item">
+                        <div class="notification-icon">
+                            <i class="fas fa-exclamation"></i>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        <div class="notification-content">
+                            <h3 class="notification-title">Nuevas solicitudes</h3>
+                            <p class="notification-desc">Tienes 5 nuevas solicitudes de verificación de estudiantes</p>
+                            <span class="notification-time">Hace 2 horas</span>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-md-6 mb-4 px-3">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                NOTICES</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">+3,462</div>
-                            <div class="mt-2 text-danger small">
-                                <span class="fas fa-arrow-down"></span>
-                                -2% since last quarter
-                            </div>
+                    </li>
+                    <li class="notification-item">
+                        <div class="notification-icon">
+                            <i class="fas fa-calendar-alt"></i>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+                        <div class="notification-content">
+                            <h3 class="notification-title">Evento próximo</h3>
+                            <p class="notification-desc">Feria de empleo universitaria comienza en 3 días</p>
+                            <span class="notification-time">Ayer</span>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sección Sales Overview -->
-    <div class="row mx-0">
-        <div class="col-lg-8 mb-4 px-3">
-            <div class="card shadow mb-4 h-100">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Sales Overview</h6>
-                    <div class="text-success small">
-                        <span class="fas fa-arrow-up"></span>
-                        4% more in 2021
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="chart-area">
-                        <canvas id="salesChart" height="300"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Calendar -->
-             <div class="col-lg-4 mb-4 px-3">
-            <div class="card shadow mb-4 h-100">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <button id="prevMonth" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <h6 class="m-0 font-weight-bold text-primary" id="calendarTitle">JULIO 2025</h6>
-                    <button id="nextMonth" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-                <div class="card-body text-center">
-                    <!-- Fecha seleccionada/día actual -->
-                    <div id="currentDateDisplay" style="margin-bottom: 20px;">
-                        <div style="font-size: 3.5rem; font-weight: bold; color: #4e73df; line-height: 1;" id="currentDay">3</div>
-                        <div style="font-size: 1.8rem; color: #5a5c69; font-weight: 500; margin: 5px 0;" id="currentMonth">JULIO</div>
-                        <div style="font-size: 1.3rem; color: #858796;" id="currentWeekday">2025 JUEVES</div>
-                    </div>
-                    
-                    <!-- Días de la semana -->
-                    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 10px;">
-                        <div style="text-align: center; font-weight: bold; color: #4e73df; font-size: 0.9rem;">LU</div>
-                        <div style="text-align: center; font-weight: bold; color: #4e73df; font-size: 0.9rem;">MA</div>
-                        <div style="text-align: center; font-weight: bold; color: #4e73df; font-size: 0.9rem;">MI</div>
-                        <div style="text-align: center; font-weight: bold; color: #4e73df; font-size: 0.9rem;">JU</div>
-                        <div style="text-align: center; font-weight: bold; color: #4e73df; font-size: 0.9rem;">VI</div>
-                        <div style="text-align: center; font-weight: bold; color: #4e73df; font-size: 0.9rem;">SÁ</div>
-                        <div style="text-align: center; font-weight: bold; color: #4e73df; font-size: 0.9rem;">DO</div>
-                    </div>
-                    
-                    <!-- Días del mes -->
-                    <div id="calendarDays" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sección Get started with Argon -->
-    <div class="row mx-0">
-        <div class="col-lg-12 mb-4 px-3">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Get started with Argon</h6>
-                </div>
-                <div class="card-body">
-                    <p class="mb-0">There's nothing I really wanted to do in life that I wasn't able to get good at.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-@endsection
-@section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Configuración del gráfico
-        const ctx = document.getElementById('salesChart');
-        
-        // Verificar si el elemento canvas existe
-        if (!ctx) {
-            console.error('No se encontró el elemento canvas con ID salesChart');
-            return;
-        }
-        
-        // Datos de ejemplo para el gráfico
-        const salesData = {
-            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-            datasets: [{
-                label: 'Ventas 2023',
-                data: [45000, 39000, 52000, 58000, 67000, 73000, 85000, 79000, 88000, 92000, 101000, 115000],
-                backgroundColor: 'rgba(78, 115, 223, 0.05)',
-                borderColor: 'rgba(78, 115, 223, 1)',
-                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
-                pointBorderColor: '#fff',
-                pointHoverRadius: 5,
-                pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
-                pointHoverBorderColor: '#fff',
-                pointHitRadius: 10,
-                pointBorderWidth: 2,
-                borderWidth: 2,
-                tension: 0.3,
-                fill: true
-            }]
-        };
-        
-        // Opciones del gráfico
-        const options = {
-            maintainAspectRatio: false,
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false,
-                        drawBorder: false
-                    }
-                },
-                y: {
-                    beginAtZero: false,
-                    grid: {
-                        color: "rgb(234, 236, 244)",
-                        drawBorder: false
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toLocaleString();
-                        }
-                    }
-                }
-            }
-        };
-        
-        // Crear el gráfico
-        const salesChart = new Chart(ctx, {
-            type: 'line',
-            data: salesData,
-            options: options
-        });
-        
-        // Manejar redimensionamiento
-        window.addEventListener('resize', function() {
-            salesChart.resize();
-        });
-
-    let currentDate = new Date();
-    let currentMonth = currentDate.getMonth();
-    let currentYear = currentDate.getFullYear();
-    let selectedDate = null;
-
-    // Elementos del DOM
-    const calendarTitle = document.getElementById('calendarTitle');
-    const prevMonthBtn = document.getElementById('prevMonth');
-    const nextMonthBtn = document.getElementById('nextMonth');
-    const currentDayElement = document.getElementById('currentDay');
-    const currentMonthElement = document.getElementById('currentMonth');
-    const currentWeekdayElement = document.getElementById('currentWeekday');
-    const calendarDaysElement = document.getElementById('calendarDays');
-
-    // Inicializar calendario
-    renderCalendar(currentMonth, currentYear);
-
-    // Event listeners para navegación
-    prevMonthBtn.addEventListener('click', function() {
-        currentMonth--;
-        if (currentMonth < 0) {
-            currentMonth = 11;
-            currentYear--;
-        }
-        renderCalendar(currentMonth, currentYear);
-    });
-
-    nextMonthBtn.addEventListener('click', function() {
-        currentMonth++;
-        if (currentMonth > 11) {
-            currentMonth = 0;
-            currentYear++;
-        }
-        renderCalendar(currentMonth, currentYear);
-    });
-
-    // Función principal para renderizar el calendario
-    function renderCalendar(month, year) {
-        // Actualizar título
-        const monthName = getMonthName(month).toUpperCase();
-        calendarTitle.textContent = `${monthName} ${year}`;
-        
-        // Obtener información del mes
-        const firstDay = new Date(year, month, 1).getDay();
-        const lastDate = new Date(year, month + 1, 0).getDate();
-        const today = new Date();
-        
-        // Generar días del mes
-        let daysHTML = '';
-        const offset = firstDay === 0 ? 6 : firstDay - 1; // Ajuste para empezar en lunes
-        
-        // Días vacíos al inicio
-        for (let i = 0; i < offset; i++) {
-            daysHTML += '<div style="height: 30px;"></div>';
-        }
-        
-        // Días del mes
-        for (let day = 1; day <= lastDate; day++) {
-            const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-            const isSelected = selectedDate && day === selectedDate.getDate() && month === selectedDate.getMonth() && year === selectedDate.getFullYear();
-            
-            daysHTML += `
-                <div 
-                    data-day="${day}"
-                    data-month="${month}"
-                    data-year="${year}"
-                    style="
-                        text-align: center; 
-                        padding: 5px; 
-                        border-radius: 50%; 
-                        background-color: ${isSelected ? '#4e73df' : isToday ? '#e9ecef' : 'transparent'};
-                        color: ${isSelected ? 'white' : isToday ? '#4e73df' : '#5a5c69'};
-                        font-weight: ${(isSelected || isToday) ? 'bold' : 'normal'};
-                        cursor: pointer;
-                        transition: all 0.2s;
-                        height: 30px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border: ${isToday ? '1px solid #4e73df' : 'none'};
-                    ">
-                    ${day}
-                </div>
-            `;
-        }
-        
-        calendarDaysElement.innerHTML = daysHTML;
-        
-        // Añadir event listeners a los días
-        addDayEventListeners();
-        
-        // Actualizar fecha superior
-        updateCurrentDateDisplay(selectedDate || today);
-    }
-    
-    // Añadir event listeners a los días del mes
-    function addDayEventListeners() {
-        const dayElements = document.querySelectorAll('#calendarDays [data-day]');
-        
-        dayElements.forEach(dayElement => {
-            dayElement.addEventListener('click', function() {
-                const day = parseInt(this.getAttribute('data-day'));
-                const month = parseInt(this.getAttribute('data-month'));
-                const year = parseInt(this.getAttribute('data-year'));
+                    </li>
+                    <li class="notification-item">
+                        <div class="notification-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="notification-content">
+                            <h3 class="notification-title">Reporte mensual</h3>
+                            <p class="notification-desc">El reporte de actividad de mayo está disponible</p>
+                            <span class="notification-time">5 de junio</span>
+                        </div>
+                    </li>
+                </ul>
                 
-                selectedDate = new Date(year, month, day);
-                updateCurrentDateDisplay(selectedDate);
-                renderCalendar(currentMonth, currentYear); // Vuelve a renderizar para actualizar estilos
-            });
-            
-            // Efectos hover
-            dayElement.addEventListener('mouseover', function() {
-                if (!this.style.backgroundColor.includes('#4e73df') && !this.style.backgroundColor.includes('#e9ecef')) {
-                    this.style.backgroundColor = '#f8f9fe';
-                }
-            });
-            
-            dayElement.addEventListener('mouseout', function() {
-                const day = parseInt(this.getAttribute('data-day'));
-                const month = parseInt(this.getAttribute('data-month'));
-                const year = parseInt(this.getAttribute('data-year'));
-                const isToday = new Date().getDate() === day && 
-                               new Date().getMonth() === month && 
-                               new Date().getFullYear() === year;
-                const isSelected = selectedDate && 
-                                 day === selectedDate.getDate() && 
-                                 month === selectedDate.getMonth() && 
-                                 year === selectedDate.getFullYear();
-                
-                if (isSelected) {
-                    this.style.backgroundColor = '#4e73df';
-                } else if (isToday) {
-                    this.style.backgroundColor = '#e9ecef';
-                } else {
-                    this.style.backgroundColor = 'transparent';
-                }
-            });
-        });
-    }
-    
-    // Actualizar la fecha mostrada arriba
-    function updateCurrentDateDisplay(date) {
-        currentDayElement.textContent = date.getDate();
-        currentMonthElement.textContent = getMonthName(date.getMonth()).toUpperCase();
-        currentWeekdayElement.textContent = `${date.getFullYear()} ${getWeekdayName(date).toUpperCase()}`;
-    }
-    
-    // Helper functions
-    function getMonthName(month) {
-        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        return months[month];
-    }
-    
-    function getWeekdayName(date) {
-        const weekdays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        return weekdays[date.getDay()];
-    }
-});
-</script>
+                <h2 class="section-title" style="margin-top: 30px;">
+                    <i class="fas fa-bolt"></i>
+                    Acciones Rápidas
+                </h2>
+                <div class="quick-actions">
+                    <div class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="action-title">Nuevo Usuario</div>
+                    </div>
+                    <div class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-file-export"></i>
+                        </div>
+                        <div class="action-title">Exportar Datos</div>
+                    </div>
+                    <div class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        <div class="action-title">Nuevo Anuncio</div>
+                    </div>
+                    <div class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div class="action-title">Ver Reportes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos/Estadísticas -->
+        <div class="section" style="margin-top: 20px;">
+            <h2 class="section-title">
+                <i class="fas fa-chart-bar"></i>
+                Estadísticas de Uso
+            </h2>
+            <div class="chart-placeholder">
+                <p>Gráfico de actividad de usuarios en los últimos 30 días</p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

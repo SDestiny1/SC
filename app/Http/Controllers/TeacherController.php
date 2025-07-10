@@ -4,15 +4,75 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Subject;
+use App\Models\Group;
+use App\Models\Carrera; // Asegúrate de que Carrera esté correctamente importado
 
 class TeacherController extends Controller
+
 {
-    // Mostrar todos los maestros
-    public function index()
-{
-    $teachers = User::where('rol', 'maestro')->with('grupo')->get();
-    return view('teachers.index', compact('teachers'));
-}
+    public function index(Request $request)
+    {
+        // Consulta base para docentes
+        $query = User::where('rol', 'docente')
+                   ->with(['grupo.carrera', 'materia']);
+        
+        // Búsqueda
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nombre', 'like', "%$search%")
+                  ->orWhere('apellidoPaterno', 'like', "%$search%")
+                  ->orWhere('apellidoMaterno', 'like', "%$search%")
+                  ->orWhere('_id', 'like', "%$search%");
+            });
+        }
+        
+        // Filtro por departamento (carrera)
+        if ($request->has('department')) {
+            $query->whereHas('grupo.carrera', function($q) use ($request) {
+                $q->where('_id', $request->department);
+            });
+        }
+        
+        // Filtro por estatus
+        if ($request->has('status')) {
+            $query->where('activo', $request->status == 'active');
+        }
+        
+        // Filtro por materia
+        if ($request->has('subject')) {
+            $query->where('materiaID', $request->subject);
+        }
+        
+        // Estadísticas
+        $totalTeachers = User::where('rol', 'docente')->count();
+        $activeTeachers = User::where('rol', 'docente')->where('activo', true)->count();
+        $totalSubjects = Subject::where('activo', true)->count();
+        $totalGroups = Group::where('activo', true)->count();
+        
+        // Obtener opciones para filtros
+        $departments = Carrera::where('activo', true)
+                           ->orderBy('nombreCarrera')
+                           ->pluck('nombreCarrera', '_id');
+        
+        $subjects = Subject::where('activo', true)
+                         ->orderBy('nombre')
+                         ->pluck('nombre', '_id');
+        
+        // Paginación
+        $teachers = $query->paginate(12);
+        
+        return view('teachers.index', compact(
+            'teachers',
+            'totalTeachers',
+            'activeTeachers',
+            'totalSubjects',
+            'totalGroups',
+            'departments',
+            'subjects'
+        ));
+    }
 
     // Mostrar formulario para crear un nuevo maestro
     public function create()
