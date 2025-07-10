@@ -1,9 +1,8 @@
-@extends('layouts.app') {{-- O el layout que estés usando --}}
-
-@section('title', 'Calendario Escolar')
+@extends('layouts.app')
 
 @section('content')
-<main class="main-content">
+    <!-- Contenido principal -->
+    <main class="main-content">
         <header class="header">
             <h1><i class="fas fa-calendar-alt"></i> Calendario Escolar</h1>
             <div class="user-info">
@@ -17,145 +16,9 @@
             <div class="calendar-view">
                 <div class="calendar-header">
                     <h2 class="calendar-title">Calendario Académico</h2>
-                    <div class="calendar-nav">
-                        <button class="calendar-nav-btn"><i class="fas fa-chevron-left"></i></button>
-                        <span class="current-month">Mayo 2024</span>
-                        <button class="calendar-nav-btn"><i class="fas fa-chevron-right"></i></button>
-                    </div>
                 </div>
                 
-                <div class="calendar-grid">
-                    <div class="calendar-day-header">Lun</div>
-                    <div class="calendar-day-header">Mar</div>
-                    <div class="calendar-day-header">Mié</div>
-                    <div class="calendar-day-header">Jue</div>
-                    <div class="calendar-day-header">Vie</div>
-                    <div class="calendar-day-header">Sáb</div>
-                    <div class="calendar-day-header">Dom</div>
-                    
-                    <!-- Días del calendario (ejemplo) -->
-                    <div class="calendar-day">
-                        <div class="day-number">29</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">30</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">1</div>
-                        <div class="event-item">Inicio de clases</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">2</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">3</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">4</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">5</div>
-                    </div>
-                    
-                    <!-- Segunda semana -->
-                    <div class="calendar-day">
-                        <div class="day-number">6</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">7</div>
-                        <div class="event-item period">Semana de exámenes</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">8</div>
-                        <div class="event-item period">Semana de exámenes</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">9</div>
-                        <div class="event-item period">Semana de exámenes</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">10</div>
-                        <div class="event-item period">Semana de exámenes</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">11</div>
-                        <div class="event-item period">Semana de exámenes</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">12</div>
-                    </div>
-                    
-                    <!-- Tercera semana -->
-                    <div class="calendar-day">
-                        <div class="day-number">13</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">14</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">15</div>
-                        <div class="event-item">Feria de empleo</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">16</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">17</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">18</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">19</div>
-                    </div>
-                    
-                    <!-- Cuarta semana -->
-                    <div class="calendar-day">
-                        <div class="day-number">20</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">21</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">22</div>
-                        <div class="event-item">Día del estudiante</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">23</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">24</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">25</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">26</div>
-                    </div>
-                    
-                    <!-- Quinta semana -->
-                    <div class="calendar-day">
-                        <div class="day-number">27</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">28</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">29</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">30</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">31</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">1</div>
-                    </div>
-                    <div class="calendar-day">
-                        <div class="day-number">2</div>
-                    </div>
-                </div>
+                <div id="calendar"></div>
             </div>
             
             <!-- Formulario de eventos -->
@@ -302,6 +165,9 @@
         </div>
     </div>
 
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
     <script>
         // Mostrar/ocultar campos según tipo de evento
         const eventTypeSelector = document.querySelector('.event-type-selector');
@@ -348,6 +214,31 @@
         document.getElementById('file-upload-area').addEventListener('click', function() {
             // En una implementación real, esto abriría un diálogo de selección de archivos
             alert('Diálogo de selección de archivo abierto (simulación)');
+        });
+
+        // Inicializar FullCalendar
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',  // español
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: @json($eventos ?? []),
+                eventDisplay: 'block',
+                // Opcional: tooltip con el tipo de evento
+                eventDidMount: function(info) {
+                    if(info.event.extendedProps.tipoEvento){
+                        info.el.setAttribute('title', info.event.extendedProps.tipoEvento);
+                    }
+                }
+            });
+
+            calendar.render();
         });
     </script>
 </body>

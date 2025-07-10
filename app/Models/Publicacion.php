@@ -23,4 +23,9 @@ class Publicacion extends Model
     {
         return $this->belongsTo(User::class, 'autorID', '_id');
     }
+
+        public function carrera()
+    {
+        return $this->belongsTo(Comentario::class, 'publicacionID', '_id');
+    }
 }

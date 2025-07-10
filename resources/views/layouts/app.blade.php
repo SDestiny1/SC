@@ -722,7 +722,7 @@
             border-radius: 8px;
             padding: 25px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            height: 700px;
+            height: 880px;
         }
         
         .calendar-header {

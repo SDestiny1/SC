@@ -8,7 +8,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CalendarioController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -44,7 +44,7 @@ Route::resource('students', controller: StudentController::class);
 Route::resource('teachers', controller: TeacherController::class);
 
 
-Route::resource('posts', PostController::class)->only(['index', 'destroy']);
+Route::resource('posts', PostController::class);
 
 
 Route::resource('groups', GroupController::class);
@@ -60,6 +60,5 @@ Route::put('/settings', [App\Http\Controllers\SettingsController::class, 'update
 Route::post('/comments', [CommentController::class, 'store'])->name('comments.store');
 
 
-Route::get('/calendario', function () {
-    return view('calendario.index');
-})->name('calendario.index');
+Route::resource('calendario', CalendarioController::class);
+

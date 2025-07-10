@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.app') {{-- O el layout que estés usando --}}
 
-@section('title', 'Manage Posts')
+@section('title', 'Calendario Escolar')
 
 @section('content')
-<!-- Contenido principal -->
+    <!-- Contenido principal -->
     <main class="main-content">
         <header class="header">
             <h1><i class="fas fa-comment-alt"></i> Gestión de Publicaciones</h1>
@@ -67,285 +67,59 @@
             </div>
         </div>
 
-        <!-- Lista de publicaciones -->
+        <!-- Contenedor dinámico de publicaciones -->
         <div class="publications-container">
-            <!-- Publicación 1 -->
-            <div class="publication">
-                <div class="publication-header">
-                    <div>
-                        <h3 class="publication-title">Bienvenidos al nuevo ciclo escolar <span class="publication-status status-approved">Aprobado</span></h3>
-                        <div class="publication-meta">
-                            <div class="publication-author">
-                                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Autor" class="author-avatar">
-                                <span class="author-name">Director Académico</span>
+            @forelse($posts as $post)
+                <div class="publication">
+                    <div class="publication-header">
+                        <div>
+                            <h3 class="publication-title">
+                                {{ Str::limit($post->contenido, 50) }}
+                                <span class="publication-status {{ $post->activo ? 'status-approved' : 'status-rejected' }}">
+                                    {{ $post->activo ? 'Aprobado' : 'Inactivo' }}
+                                </span>
+                            </h3>
+                            <div class="publication-meta">
+                                <div class="publication-author">
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($post->user->name ?? 'Anonimo') }}" alt="Autor" class="author-avatar">
+                                    <span class="author-name">{{ $post->user->name ?? $post->autorID }}</span>
+                                </div>
+                                <span class="publication-date">
+                                    {{ $post->fecha_carbon ? $post->fecha_carbon->format('d/m/Y') : '?' }}
+                                </span>
                             </div>
-                            <span class="publication-date">15/03/2024</span>
                         </div>
                     </div>
-                </div>
-                
-                <div class="publication-content">
-                    Nos complace dar la bienvenida a todos los estudiantes al nuevo ciclo escolar. Este año tenemos preparadas muchas actividades académicas y culturales para enriquecer su experiencia universitaria.
-                </div>
-                
-                <img src="./assets/img/teiou.jpeg" alt="Imagen publicación" class="publication-image">
-                
-                <div class="publication-actions">
-                    <div class="publication-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-thumbs-up"></i>
-                            <span>124</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-comment"></i>
-                            <span>23</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-share"></i>
-                            <span>15</span>
-                        </div>
-                    </div>
-                    
-                    <div class="publication-admin-actions">
-                        <button class="admin-action-btn btn-reject">
-                            <i class="fas fa-ban"></i> Rechazar
-                        </button>
-                        <button class="admin-action-btn btn-edit">
-                            <i class="fas fa-edit"></i> Eliminar
-                        </button>
 
+                    <div class="publication-content">
+                        {{ $post->contenido }}
                     </div>
-                </div>
-            </div>
-            
-            <!-- Publicación 2 -->
-            <div class="publication">
-                <div class="publication-header">
-                    <div>
-                        <h3 class="publication-title">Guía de Supervivencia para el Primer Cuatrimestre <span class="publication-status status-pending">Pendiente</span></h3>
-                        <div class="publication-meta">
-                            <div class="publication-author">
-                                <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Autor" class="author-avatar">
-                                <span class="author-name">Ana López (Estudiante)</span>
+
+                    @if($post->imagenURL)
+                        <img src="{{ $post->imagenURL }}" alt="Imagen publicación" class="publication-image">
+                    @endif
+
+                    <div class="publication-actions">
+                        <div class="publication-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-comment"></i>
+                                <span>{{ $post->comentarios_count ?? 0 }}</span>
                             </div>
-                            <span class="publication-date">15/12/2023</span>
+                        </div>
+                        <div class="publication-admin-actions">
+                            <form action="{{ route('posts.destroy', $post->_id) }}" method="POST" onsubmit="return confirm('¿Eliminar esta publicación?');">
+                                @csrf
+                                @method('DELETE')
+                                <button class="admin-action-btn btn-reject">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
-                
-                <div class="publication-content">
-                    Como estudiante de segundo año, quiero compartir algunos consejos útiles para los nuevos estudiantes que están comenzando su primer cuatrimestre. Desde cómo organizar tu tiempo hasta los mejores lugares para estudiar en el campus.
-                </div>
-                
-                <img src="./assets/img/services.jpg" alt="Imagen publicación" class="publication-image">
-                
-                <div class="publication-actions">
-                    <div class="publication-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-thumbs-up"></i>
-                            <span>87</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-comment"></i>
-                            <span>14</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-share"></i>
-                            <span>9</span>
-                        </div>
-                    </div>
-                    
-                    <div class="publication-admin-actions">
-                        <button class="admin-action-btn btn-reject">
-                            <i class="fas fa-ban"></i> Rechazar
-                        </button>
-                        <button class="admin-action-btn btn-edit">
-                            <i class="fas fa-edit"></i> Eliminar
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Publicación 3 -->
-            <div class="publication">
-                <div class="publication-header">
-                    <div>
-                        <h3 class="publication-title">Convocatoria para el Torneo de Debate Interuniversitario <span class="publication-status status-approved">Aprobado</span></h3>
-                        <div class="publication-meta">
-                            <div class="publication-author">
-                                <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="Autor" class="author-avatar">
-                                <span class="author-name">Prof. Luis Fernández</span>
-                            </div>
-                            <span class="publication-date">08/03/2024</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="publication-content">
-                    El Departamento de Humanidades invita a todos los estudiantes interesados en participar en el Torneo de Debate Interuniversitario que se llevará a cabo el próximo mes. Inscripciones abiertas hasta el 25 de marzo.
-                </div>                
-                <div class="publication-actions">
-                    <div class="publication-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-thumbs-up"></i>
-                            <span>56</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-comment"></i>
-                            <span>7</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-share"></i>
-                            <span>12</span>
-                        </div>
-                    </div>
-                    
-                    <div class="publication-admin-actions">
-                        <button class="admin-action-btn btn-reject">
-                            <i class="fas fa-ban"></i> Rechazar
-                        </button>
-                        <button class="admin-action-btn btn-edit">
-                            <i class="fas fa-edit"></i> Eliminar
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Publicación 4 -->
-            <div class="publication">
-                <div class="publication-header">
-                    <div>
-                        <h3 class="publication-title">Consejos para el Examen Final de Cálculo <span class="publication-status status-rejected">Rechazado</span></h3>
-                        <div class="publication-meta">
-                            <div class="publication-author">
-                                <img src="https://randomuser.me/api/portraits/men/12.jpg" alt="Autor" class="author-avatar">
-                                <span class="author-name">Carlos Méndez (Estudiante)</span>
-                            </div>
-                            <span class="publication-date">05/03/2024</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="publication-content">
-                    Comparto algunos consejos para prepararse para el examen final de Cálculo Diferencial basados en mi experiencia del semestre pasado. Incluye los temas más importantes y recursos adicionales.
-                </div>
-                
-                <div class="publication-actions">
-                    <div class="publication-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-thumbs-up"></i>
-                            <span>42</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-comment"></i>
-                            <span>5</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-share"></i>
-                            <span>3</span>
-                        </div>
-                    </div>
-                    
-                    <div class="publication-admin-actions">
-                        <button class="admin-action-btn btn-approve">
-                            <i class="fas fa-check"></i> Aprobar
-                        </button>
-                        <button class="admin-action-btn btn-edit">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <!-- Publicación 5 -->
-            <div class="publication">
-                <div class="publication-header">
-                    <div>
-                        <h3 class="publication-title">Consejos para el Examen Final de Cálculo <span class="publication-status status-rejected">Rechazado</span></h3>
-                        <div class="publication-meta">
-                            <div class="publication-author">
-                                <img src="https://randomuser.me/api/portraits/men/12.jpg" alt="Autor" class="author-avatar">
-                                <span class="author-name">Carlos Méndez (Estudiante)</span>
-                            </div>
-                            <span class="publication-date">05/03/2024</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="publication-content">
-                    Comparto algunos consejos para prepararse para el examen final de Cálculo Diferencial basados en mi experiencia del semestre pasado. Incluye los temas más importantes y recursos adicionales.
-                </div>
-                
-                <div class="publication-actions">
-                    <div class="publication-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-thumbs-up"></i>
-                            <span>42</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-comment"></i>
-                            <span>5</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-share"></i>
-                            <span>3</span>
-                        </div>
-                    </div>
-                    
-                    <div class="publication-admin-actions">
-                        <button class="admin-action-btn btn-approve">
-                            <i class="fas fa-check"></i> Aprobar
-                        </button>
-                        <button class="admin-action-btn btn-edit">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <!-- Publicación 4 -->
-            <div class="publication">
-                <div class="publication-header">
-                    <div>
-                        <h3 class="publication-title">Consejos para el Examen Final de Cálculo <span class="publication-status status-rejected">Rechazado</span></h3>
-                        <div class="publication-meta">
-                            <div class="publication-author">
-                                <img src="https://randomuser.me/api/portraits/men/12.jpg" alt="Autor" class="author-avatar">
-                                <span class="author-name">Carlos Méndez (Estudiante)</span>
-                            </div>
-                            <span class="publication-date">05/03/2024</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="publication-content">
-                    Comparto algunos consejos para prepararse para el examen final de Cálculo Diferencial basados en mi experiencia del semestre pasado. Incluye los temas más importantes y recursos adicionales.
-                </div>
-                
-                <div class="publication-actions">
-                    <div class="publication-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-thumbs-up"></i>
-                            <span>42</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-comment"></i>
-                            <span>5</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-share"></i>
-                            <span>3</span>
-                        </div>
-                    </div>
-                    
-                    <div class="publication-admin-actions">
-                        <button class="admin-action-btn btn-approve">
-                            <i class="fas fa-check"></i> Aprobar
-                        </button>
-                        <button class="admin-action-btn btn-edit">
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                    </div>
-                </div>
-            </div>
+            @empty
+                <p style="padding: 20px; text-align: center;">No hay publicaciones disponibles.</p>
+            @endforelse
         </div>
         
         <!-- Paginación -->
