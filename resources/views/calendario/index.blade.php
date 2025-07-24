@@ -20,71 +20,96 @@
                 
                 <div id="calendar"></div>
             </div>
+            @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
             
-            <!-- Formulario de eventos -->
-            <div class="event-form-container">
-                <h3 class="form-title"><i class="fas fa-plus-circle"></i> Agregar Evento/Periodo</h3>
-                
-                <div class="form-group">
-                    <label for="event-type">Tipo</label>
-                    <select id="event-type" class="event-type-selector">
-                        <option value="event">Evento</option>
-                        <option value="period">Periodo</option>
-                    </select>
+<!-- Formulario de eventos -->
+<div class="event-form-container">
+    <h3 class="form-title"><i class="fas fa-plus-circle"></i> Agregar Evento/Periodo</h3>
+    
+    <form action="{{ route('calendario.store') }}" method="POST" id="event-form">
+        @csrf
+        
+        <div class="form-group">
+            <label for="event-type">Tipo</label>
+            <select id="event-type" name="tipo" class="event-type-selector" required>
+                <option value="evento">Evento</option>
+                <option value="periodo">Periodo</option>
+                <option value="inicio ciclo">Inicio de Ciclo</option>
+                <option value="evaluaciones">Evaluaciones</option>
+                <option value="día feriado">Día Feriado</option>
+            </select>
+
+        </div>
+        
+        <div class="form-group">
+            <label for="event-name">Nombre del Evento/Periodo</label>
+            <input type="text" id="event-name" name="nombre" placeholder="Ej: Semana de exámenes parciales" required>
+        </div>
+        
+        <div class="form-group event-date-field">
+            <label for="event-date">Día del evento</label>
+            <input type="date" id="event-date" name="fecha" required>
+        </div>
+        
+        <div class="form-group period-date-fields" style="display: none;">
+            <label>Periodo</label>
+            <div class="date-fields">
+                <div>
+                    <label for="period-start">Inicio</label>
+                    <input type="date" id="period-start" name="fecha_inicio">
                 </div>
-                
-                <div class="form-group">
-                    <label for="event-name">Nombre del Evento/Periodo</label>
-                    <input type="text" id="event-name" placeholder="Ej: Semana de exámenes parciales">
+                <div>
+                    <label for="period-end">Fin</label>
+                    <input type="date" id="period-end" name="fecha_fin">
                 </div>
-                
-                <div class="form-group event-date-field">
-                    <label for="event-date">Día del evento</label>
-                    <input type="date" id="event-date">
-                </div>
-                
-                <div class="form-group period-date-fields" style="display: none;">
-                    <label>Periodo</label>
-                    <div class="date-fields">
-                        <div>
-                            <label for="period-start">Inicio</label>
-                            <input type="date" id="period-start">
-                        </div>
-                        <div>
-                            <label for="period-end">Fin</label>
-                            <input type="date" id="period-end">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="event-description">Descripción (opcional)</label>
-                    <textarea id="event-description" placeholder="Agregue una descripción detallada del evento o periodo"></textarea>
-                </div>
-                
-                <div class="form-actions">
-                    <button class="btn btn-primary">
-                        <i class="fas fa-save"></i> Guardar
-                    </button>
-                    <button class="btn btn-outline">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="event-description">Descripción (opcional)</label>
+            <textarea id="event-description" name="descripcion" placeholder="Agregue una descripción detallada del evento o periodo"></textarea>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar
+            </button>
+            <button type="reset" class="btn btn-outline">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+        </div>
+    </form>
                 
                 <!-- Importar desde Excel -->
-                <div class="import-section">
-                    <h3 class="form-title"><i class="fas fa-file-import"></i> Importar desde Excel</h3>
-                    
-                    <div class="file-upload" id="file-upload-area">
-                        <i class="fas fa-file-excel"></i>
-                        <p>Arrastra tu archivo Excel aquí o haz clic para seleccionar</p>
-                        <small>Formatos soportados: .xlsx, .xls, .csv</small>
-                    </div>
-                    
-                    <a class="example-link" id="show-example-btn">
-                        <i class="fas fa-eye"></i> Ver ejemplo de estructura requerida
-                    </a>
-                </div>
+<form action="{{ route('calendario.importar') }}" method="POST" enctype="multipart/form-data">
+    @csrf
+    <div class="import-section">
+        <h3 class="form-title">
+            <i class="fas fa-file-import"></i> Importar desde Excel
+        </h3>
+
+        <div class="file-upload" id="file-upload-area" onclick="document.getElementById('archivoExcel').click();">
+            <i class="fas fa-file-excel"></i>
+            <p>Haz clic para seleccionar tu archivo Excel</p>
+            <small>Formatos soportados: .xlsx, .xls, .csv</small>
+        </div>
+
+        <input type="file" id="archivoExcel" name="archivo" accept=".xlsx,.xls,.csv" style="display: none;" onchange="this.form.submit()">
+
+        <a class="example-link" id="show-example-btn">
+            <i class="fas fa-eye"></i> Ver ejemplo de estructura requerida
+        </a>
+    </div>
+</form>
+
             </div>
         </div>
     </main>
@@ -174,16 +199,26 @@
         const eventDateField = document.querySelector('.event-date-field');
         const periodDateFields = document.querySelector('.period-date-fields');
         
-        eventTypeSelector.addEventListener('change', function() {
-            if (this.value === 'event') {
-                eventDateField.style.display = 'block';
-                periodDateFields.style.display = 'none';
-            } else {
-                eventDateField.style.display = 'none';
-                periodDateFields.style.display = 'block';
-            }
-        });
-        
+eventTypeSelector.addEventListener('change', function () {
+    const tipo = this.value;
+
+    if (tipo === 'evento' || tipo === 'día feriado' || tipo === 'inicio ciclo') {
+        eventDateField.style.display = 'block';
+        document.getElementById('event-date').setAttribute('required', 'required');
+
+        periodDateFields.style.display = 'none';
+        document.getElementById('period-start').removeAttribute('required');
+        document.getElementById('period-end').removeAttribute('required');
+    } else if (tipo === 'periodo' || tipo === 'evaluaciones') {
+        eventDateField.style.display = 'none';
+        document.getElementById('event-date').removeAttribute('required');
+
+        periodDateFields.style.display = 'block';
+        document.getElementById('period-start').setAttribute('required', 'required');
+        document.getElementById('period-end').setAttribute('required', 'required');
+    }
+});
+
         // Mostrar modal de ejemplo
         const showExampleBtn = document.getElementById('show-example-btn');
         const exampleModal = document.getElementById('example-modal');
@@ -202,18 +237,6 @@
             if (e.target === exampleModal) {
                 exampleModal.style.display = 'none';
             }
-        });
-        
-        // Simular descarga de plantilla
-        document.getElementById('download-template-btn').addEventListener('click', function() {
-            alert('Plantilla descargada (simulación)');
-            exampleModal.style.display = 'none';
-        });
-        
-        // Simular subida de archivo
-        document.getElementById('file-upload-area').addEventListener('click', function() {
-            // En una implementación real, esto abriría un diálogo de selección de archivos
-            alert('Diálogo de selección de archivo abierto (simulación)');
         });
 
         // Inicializar FullCalendar
@@ -239,7 +262,14 @@
             });
 
             calendar.render();
+            document.getElementById('download-template-btn').addEventListener('click', function() {
+    window.location.href = "{{ route('plantilla.calendario') }}";
+});
         });
     </script>
+
+    
+
+    
 </body>
 </html>

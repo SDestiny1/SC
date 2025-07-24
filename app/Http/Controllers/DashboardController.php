@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Publicacion;
-use App\Models\Noticia;
+use App\Models\Publication;
+use App\Models\Notice;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
 
@@ -32,7 +32,7 @@ class DashboardController extends Controller
                               ->toArray();
             
             // Contar publicaciones de alumnos activos
-            $data['studentPublicationsCount'] = Publicacion::whereIn('autorID', $alumnosIds)
+            $data['studentPublicationsCount'] = Publication::whereIn('autorID', $alumnosIds)
                                                   ->where('activo', true)
                                                   ->count();
             
@@ -43,14 +43,14 @@ class DashboardController extends Controller
                                ->toArray();
             
             // Contar publicaciones de maestros activos
-            $data['teacherPublicationsCount'] = Publicacion::whereIn('autorID', $maestrosIds)
+            $data['teacherPublicationsCount'] = Publication::whereIn('autorID', $maestrosIds)
                                                   ->where('activo', true)
                                                   ->count();
             
             // Contar noticias activas
-            $data['activeNewsCount'] = Noticia::where('activo', true)->count();
+            $data['activeNewsCount'] = Notice::where('activo', true)->count();
             
-            $recentPublications = Publicacion::with('user')
+            $recentPublications = Publication::with('user')
                 ->where('activo', true)
                 ->orderBy('fecha', 'desc')
                 ->limit(5)
@@ -65,7 +65,7 @@ class DashboardController extends Controller
                     ];
                 });
             
-            $recentNews = Noticia::with('user')
+            $recentNews = Notice::with('user')
                 ->where('activo', true)
                 ->orderBy('fechaPublicacion', 'desc')
                 ->limit(5)

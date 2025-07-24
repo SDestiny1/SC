@@ -108,26 +108,23 @@
                                 {{ $student->activo ? 'Activo' : 'Inactivo' }}
                             </span>
                         </td>
-                        <td>
-                            <div class="action-icons">
-                                <a href="{{ route('students.show', $student->_id) }}" class="action-icon" title="Ver perfil">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="#" class="action-icon" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="mailto:{{ $student->_id }}" class="action-icon" title="Enviar mensaje">
-                                    <i class="fas fa-envelope"></i>
-                                </a>
-                                <form action="{{ route('students.destroy', $student->_id) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="action-icon" title="Eliminar" onclick="return confirm('¿Estás seguro de eliminar este alumno?')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
+<td>
+    <div class="action-icons">
+        <a href="{{ route('students.show', $student->_id) }}" class="action-icon" title="Ver perfil">
+            <i class="fas fa-eye"></i>
+        </a>
+        <a href="mailto:{{ $student->_id }}" class="action-icon" title="Enviar mensaje">
+            <i class="fas fa-envelope"></i>
+        </a>
+        <form action="{{ route('students.destroy', $student->_id) }}" method="POST" style="display:inline;">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="action-icon" title="{{ $student->activo ? 'Desactivar' : 'Activar' }}">
+                <i class="fas {{ $student->activo ? 'fa-user-slash' : 'fa-user-check' }}"></i>
+            </button>
+        </form>
+    </div>
+</td>
                     </tr>
                     @empty
                     <tr>
@@ -149,18 +146,57 @@
         </div>
     </main>
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Mostrar/ocultar filtros
-            const toggleFilters = document.getElementById('toggleFilters');
-            const filtersSection = document.getElementById('filtersSection');
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar/ocultar filtros (mantenemos esta funcionalidad)
+    const toggleFilters = document.getElementById('toggleFilters');
+    const filtersSection = document.getElementById('filtersSection');
+    
+    toggleFilters.addEventListener('click', function() {
+        filtersSection.style.display = filtersSection.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    // Configuración de SweetAlert para cambiar estatus
+    const statusForms = document.querySelectorAll('form[method="POST"]');
+    statusForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            toggleFilters.addEventListener('click', function() {
-                if (filtersSection.style.display === 'none') {
-                    filtersSection.style.display = 'block';
-                } else {
-                    filtersSection.style.display = 'none';
+            const form = this;
+            const studentRow = form.closest('tr');
+            const studentName = studentRow.querySelector('.student-name span').textContent;
+            const currentStatus = studentRow.querySelector('.status-badge').textContent.trim();
+            const willBeActive = form.querySelector('i').classList.contains('fa-user-check');
+            const action = willBeActive ? 'reactivar' : 'desactivar';
+            const statusText = willBeActive ? 'Activo' : 'Inactivo';
+            const icon = willBeActive ? 'success' : 'warning';
+            
+            Swal.fire({
+                title: `¿${action.toUpperCase()} AL ALUMNO?`,
+                html: `<div style="text-align:left; margin:15px 0;">
+                        <p><strong>Alumno:</strong> ${studentName}</p>
+                        <p><strong>Estatus actual:</strong> <span class="status-badge status-${currentStatus === 'Activo' ? 'active' : 'inactive'}">${currentStatus}</span></p>
+                        <p><strong>Nuevo estatus:</strong> <span class="status-badge status-${willBeActive ? 'active' : 'inactive'}">${statusText}</span></p>
+                      </div>`,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonText: `Sí, ${action}`,
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: willBeActive ? '#28a745' : '#dc3545',
+                customClass: {
+                    popup: 'custom-swal-popup',
+                    confirmButton: 'custom-swal-confirm-btn',
+                    cancelButton: 'custom-swal-cancel-btn'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Envía el formulario si se confirma
+                    form.submit();
                 }
             });
         });
-    </script>
+    });
+});
+</script>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Jenssegers\Mongodb\Eloquent\Model;
+use App\Models\Career;
 
 class Group extends Model
 {
@@ -23,7 +24,7 @@ class Group extends Model
     }
         public function carrera()
     {
-        return $this->belongsTo(Carrera::class, 'carreraID', '_id');
+        return $this->belongsTo(Career::class, 'carreraID', '_id');
     }
 }
 

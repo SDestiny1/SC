@@ -171,17 +171,22 @@
                         </div>
                     </div>
                 </div>
-                <div class="professor-actions">
-                    <a href="{{ route('teachers.show', $teacher->_id) }}" class="action-btn">
-                        <i class="fas fa-eye"></i> Ver
-                    </a>
-                    <a href="{{ route('teachers.edit', $teacher->_id) }}" class="action-btn secondary">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                    <a href="mailto:{{ $teacher->_id }}" class="action-btn">
-                        <i class="fas fa-envelope"></i> Contactar
-                    </a>
-                </div>
+<div class="professor-actions">
+    <a href="{{ route('teachers.show', $teacher->_id) }}" class="action-btn">
+        <i class="fas fa-eye"></i> Ver
+    </a>                    
+    <a href="mailto:{{ $teacher->_id }}" class="action-btn">
+        <i class="fas fa-envelope"></i> Contactar
+    </a>
+    <form action="{{ route('teachers.destroy', $teacher->_id) }}" method="POST" class="status-form">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="action-btn {{ $teacher->activo ? 'status-inactive' : 'status-active' }}">
+            <i class="fas {{ $teacher->activo ? 'fa-toggle-off' : 'fa-toggle-on' }}"></i>
+            {{ $teacher->activo ? 'Desactivar' : 'Activar' }}
+        </button>
+    </form>
+</div>
             </div>
             @empty
             <div class="no-results">
@@ -199,14 +204,55 @@
         @endif
     </main>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Mostrar/ocultar filtros
-            const toggleFilters = document.getElementById('toggleFilters');
-            const filtersSection = document.getElementById('filtersSection');
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar/ocultar filtros
+    const toggleFilters = document.getElementById('toggleFilters');
+    const filtersSection = document.getElementById('filtersSection');
+    
+    toggleFilters.addEventListener('click', function() {
+        filtersSection.style.display = filtersSection.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    // Configuración de SweetAlert para cambiar estatus de docentes
+    const statusForms = document.querySelectorAll('.status-form');
+    statusForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            toggleFilters.addEventListener('click', function() {
-                filtersSection.style.display = filtersSection.style.display === 'none' ? 'block' : 'none';
+            const form = this;
+            const professorCard = form.closest('.professor-card');
+            const professorName = professorCard.querySelector('.professor-name').textContent;
+            const currentStatus = professorCard.querySelector('.professor-status').textContent.trim();
+            const willBeActive = form.querySelector('button').classList.contains('status-active');
+            const action = willBeActive ? 'reactivar' : 'desactivar';
+            const statusText = willBeActive ? 'Activo' : 'Inactivo';
+            const icon = willBeActive ? 'success' : 'warning';
+            
+            Swal.fire({
+                title: `¿${action.toUpperCase()} AL DOCENTE?`,
+                html: `<div style="text-align:left; margin:15px 0;">
+                        <p><strong>Docente:</strong> ${professorName}</p>
+                        <p><strong>Estatus actual:</strong> <span class="professor-status status-${currentStatus === 'Activo' ? 'active' : 'inactive'}">${currentStatus}</span></p>
+                        <p><strong>Nuevo estatus:</strong> <span class="professor-status status-${willBeActive ? 'active' : 'inactive'}">${statusText}</span></p>
+                      </div>`,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonText: `Sí, ${action}`,
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: willBeActive ? '#28a745' : '#dc3545',
+                customClass: {
+                    popup: 'custom-swal-popup',
+                    confirmButton: 'custom-swal-confirm-btn',
+                    cancelButton: 'custom-swal-cancel-btn'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Envía el formulario si se confirma
+                    form.submit();
+                }
             });
         });
-    </script>
+    });
+});
+</script>

@@ -28,20 +28,19 @@ class User extends Eloquent implements AuthenticatableContract
 
     protected $hidden = ['password'];
 
-    public function grupo()
-    {
-        return $this->belongsTo(Group::class, 'grupoID', '_id')->with('carrera');
-    }
+public function grupo()
+{
+    return $this->belongsTo(Group::class, 'grupoID', '_id');
+}
 
  public function publicaciones()
     {
-        return $this->hasMany(Publicacion::class, 'autorID', '_id');
+        return $this->hasMany(Publication::class, 'autorID', '_id');
     }
     
-    // Relación con noticias
     public function noticias()
     {
-        return $this->hasMany(Noticia::class, 'autorID', '_id');
+        return $this->hasMany(Notice::class, 'autorID', '_id');
     }
 
         public function materia()

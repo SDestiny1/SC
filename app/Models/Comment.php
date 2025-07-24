@@ -6,10 +6,13 @@ use Jenssegers\Mongodb\Eloquent\Model;
 
 class Comment extends Model
 {
-    protected $connection = 'mongodb'; // si usas conexión mongodb en config/database.php
-    protected $collection = 'comments';
+    protected $connection = 'mongodb';
+    protected $collection = 'comentario';
 
-    protected $fillable = ['post_id', 'usuario_id', 'texto', 'fecha'];
-
-    protected $dates = ['fecha'];
+    protected $fillable = [
+        'publicacionID',
+        'usuarioID',
+        'contenido',
+        'fecha'
+    ];
 }

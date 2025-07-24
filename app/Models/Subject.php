@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Jenssegers\Mongodb\Eloquent\Model;
+use App\Models\Career;
 
 class Subject extends Model
 {
@@ -20,7 +21,7 @@ class Subject extends Model
     
     public function carrera()
     {
-        return $this->belongsTo(Carrera::class, 'carreraID', '_id');
+        return $this->belongsTo(Career::class, 'carreraID', '_id');
     }
     
     public function teachers()

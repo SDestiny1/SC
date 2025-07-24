@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Publication;
 use Illuminate\Http\Request;
 use App\Models\Publicacion;
 use Carbon\Carbon;
 use MongoDB\BSON\UTCDateTime;
-use App\Models\Comentario;
+use App\Models\Comment;
 use MongoDB\BSON\ObjectId;
+use Illuminate\Support\Facades\Storage;
+
 
 class PostController extends Controller
 {
     public function index()
     {
-        $posts = Publicacion::with('user')
+        $posts = Publication::with('user')
                       ->orderBy('fecha', 'desc')
                       ->paginate(10);
         // Convertimos el campo fecha para cada post
@@ -29,17 +32,15 @@ class PostController extends Controller
                             $post->fecha_carbon = Carbon::now();
                         }
                     }
-                    $post->comentarios_count = Comentario::where('publicacionID', new ObjectId($post->_id))->count();
                 }
         return view('posts.index', compact('posts'));
     }
 
     public function destroy($id)
     {
-        $post = Publicacion::findOrFail($id);
+        $post = Publication::findOrFail($id);
         $post->delete();
-
-        return redirect()->route('posts.index')->with('success', 'Publicación eliminada correctamente.');
+        return back()->with('success', 'Estado cambiado correctamente');
     }
 
     public function manage()
@@ -86,4 +87,67 @@ class PostController extends Controller
             ]);
         }
     }
+public function toggleStatus($id)
+{
+    try {
+        $post = Post::findOrFail($id);
+        $newStatus = !$post->activo;
+        $post->update(['activo' => $newStatus]);
+        
+        $message = $newStatus 
+            ? 'La publicación ha sido activada' 
+            : 'La publicación ha sido desactivada';
+            
+        return back()->with('success', $message);
+    } catch (\Exception $e) {
+        return back()->with('error', 'Error al cambiar el estado: ' . $e->getMessage());
+    }
+}
+public function create()
+{
+    return view('posts.create');
+}
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'titulo' => 'required|string|max:255',
+        'contenido' => 'required|string',
+        'fechaPublicacion' => 'required|date|after_or_equal:fechaCreacion',
+        'activo' => 'required|boolean',
+        'imagen' => 'nullable|image|max:2048' // máximo 2MB
+    ]);
+
+    // Procesar imagen si se subió
+    $imagenURL = null;
+    if ($request->hasFile('imagen')) {
+        $path = $request->file('imagen')->store('public/noticias');
+        $imagenURL = Storage::url($path); // genera una URL como /storage/noticias/archivo.jpg
+    }
+
+    // Asignar el documento de forma segura
+    $documento = [
+        'autorID' => (string) auth()->user()->_id,
+        'titulo' => $validated['titulo'],
+        'contenido' => $validated['contenido'],
+        'fechaCreacion' => now()->toISOString(),
+        'fechaPublicacion' => $validated['fechaPublicacion'],
+        'activo' => (bool) $validated['activo'],
+        'imagenURL' => $imagenURL
+    ];
+
+    // Insertar en la colección correcta
+    \DB::connection('mongodb')->collection('noticia')->insert($documento);
+
+    return redirect()->route('posts.index')->with('success', 'Noticia creada correctamente.');
+}
+
+public function mostrarNoticias()
+{
+    $noticias = \DB::connection('mongodb')->collection('noticia')
+        ->orderBy('fechaCreacion', 'desc')
+        ->get();
+
+    return view('noticias.index', compact('noticias'));
+}
+
 }

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Jenssegers\Mongodb\Eloquent\Model;
 
-class Publicacion extends Model
+class Publication extends Model
 {
     protected $connection = 'mongodb';
     protected $collection = 'publicacion';
@@ -26,6 +26,6 @@ class Publicacion extends Model
 
         public function carrera()
     {
-        return $this->belongsTo(Comentario::class, 'publicacionID', '_id');
+        return $this->belongsTo(Comment::class, 'publicacionID', '_id');
     }
 }

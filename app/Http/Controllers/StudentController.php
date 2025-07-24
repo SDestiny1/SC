@@ -5,16 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Group;
-use App\Models\Carrera;
-
+use Carbon\Carbon;
+use App\Models\Career; 
 class StudentController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request)
 {
-    // Consulta base con relaciones
     $query = User::where('rol', 'alumno')
-                ->with(['grupo.carrera']); // Cargar grupo y su carrera
-    
+                ->with(['grupo' => function($q) {
+                    $q->with('carrera');
+                }]);
+
     // Búsqueda
     if ($request->has('search')) {
         $search = $request->search;
@@ -26,28 +27,27 @@ class StudentController extends Controller
         });
     }
     
-    // Filtro por carrera
-    if ($request->has('carreraID')) {
+    // Filtro por carrera (corregido)
+    if ($request->filled('carreraID')) {
         $query->whereHas('grupo', function($q) use ($request) {
             $q->where('carreraID', $request->carreraID);
         });
     }
     
-    // Filtro por semestre
-    if ($request->has('semestre')) {
+    // Filtro por semestre (corregido)
+    if ($request->filled('semestre')) {
         $query->whereHas('grupo', function($q) use ($request) {
-            $q->where('semestre', $request->semestre);
+            $q->where('semestre', (int)$request->semestre);
         });
     }
     
-    // Filtro por estatus
-    if ($request->has('estatus')) {
-        $estatus = $request->estatus == 'active' ? true : false;
-        $query->where('activo', $estatus);
+    // Filtro por estatus (corregido)
+    if ($request->filled('estatus')) {
+        $query->where('activo', $request->estatus == 'active');
     }
     
     // Obtener opciones para filtros
-    $carreras = Carrera::where('activo', true)
+    $carreras = Career::where('activo', true)
                      ->orderBy('nombreCarrera')
                      ->pluck('nombreCarrera', '_id');
     
@@ -55,11 +55,12 @@ class StudentController extends Controller
                      ->orderBy('semestre')
                      ->pluck('semestre');
     
-    // Paginación
     $students = $query->paginate(10);
     
     return view('students.index', compact('students', 'carreras', 'semestres'));
 }
+
+
 
     public function create()
     {
@@ -97,16 +98,35 @@ class StudentController extends Controller
         return redirect()->route('students.index')->with('success', 'Alumno registrado exitosamente.');
     }
 
-    public function destroy($id)
-    {
-        $student = User::where('_id', $id)->where('rol', 'alumno')->firstOrFail();
-        $student->delete();
-        return back()->with('success', 'Alumno eliminado correctamente.');
-    }
-
-    public function show($id)
+public function destroy($id)
 {
     $student = User::where('_id', $id)->where('rol', 'alumno')->firstOrFail();
+    
+    // Cambiar el estatus en lugar de eliminar
+    $student->update([
+        'activo' => !$student->activo // Invierte el estado actual
+    ]);
+    
+    return back()->with('success', $student->activo ? 'Alumno reactivado correctamente' : 'Alumno desactivado correctamente');
+}
+
+public function show($id)
+{
+    $student = User::where('_id', $id)
+        ->where('rol', 'alumno')
+        ->with(['grupo' => function($query) {
+            $query->with('carrera');
+        }])
+        ->firstOrFail();
+
+if ($student->fechaNacimiento instanceof \MongoDB\BSON\UTCDateTime) {
+    $student->fechaNacimiento = Carbon::instance($student->fechaNacimiento->toDateTime());
+}
+
+if ($student->fechaRegistro instanceof \MongoDB\BSON\UTCDateTime) {
+    $student->fechaRegistro = Carbon::instance($student->fechaRegistro->toDateTime());
+}
+
     return view('students.show', compact('student'));
 }
 }

@@ -1,45 +1,58 @@
 @extends('layouts.app')
-@section('title', 'Gestión de Alumnos')
+
+@section('title', 'Perfil del Maestro')
+
 @section('content')
-    <!-- Contenido principal -->
 <main class="main-content">
     <section class="profile-container">
         <div class="profile-card">
             <div class="profile-header">
-                <img src="{{ $student->fotoPerfil ?? 'https://randomuser.me/api/portraits/men/32.jpg' }}" alt="Foto de perfil" class="profile-avatar">
+                <img src="{{ $teacher->fotoPerfil ?? 'https://randomuser.me/api/portraits/men/32.jpg' }}" alt="Foto de perfil" class="profile-avatar">
                 <div class="profile-basic">
-                    <h2>{{ $student->nombre }} {{ $student->apellidoPaterno }} {{ $student->apellidoMaterno }}</h2>
-                    <p><i class="fas fa-envelope"></i> {{ $student->_id }}</p>
-                    <p><i class="fas fa-graduation-cap"></i> {{ $student->grupo->carrera->nombreCarrera ?? 'Sin carrera' }}</p>
-                    <p><i class="fas fa-layer-group"></i> {{ $student->grupo->semestre ?? 'Sin semestre' }}° Semestre</p>
+                    <h2>{{ $teacher->nombre }} {{ $teacher->apellidoPaterno }} {{ $teacher->apellidoMaterno }}</h2>
+                    <p><i class="fas fa-envelope"></i> {{ $teacher->_id }}</p>
+                    <p><i class="fas fa-book"></i> {{ $teacher->materia?->nombre ?? 'Sin materia asignada' }}</p>
+                    <p><i class="fas fa-building"></i> {{ $teacher->grupo?->carrera?->nombreCarrera ?? 'Sin departamento asignado' }}</p>
                 </div>
             </div>
 
             <div class="profile-details">
                 <h3>Información General</h3>
                 <ul>
-                    <li><strong>Matrícula:</strong> {{ $student->matricula ?? substr($student->_id, 0, 8) }}</li>
-                    <li><strong>Fecha de nacimiento:</strong> {{ \Carbon\Carbon::instance($student->fechaNacimiento->toDateTime())->format('d/m/Y') }} </li>
-                    <li><strong>Grupo:</strong> {{ $student->grupo->nombreGrupo ?? 'No asignado' }}</li>
+                    <li><strong>Especialidad:</strong> {{ $teacher->specialty ?? 'No especificada' }}</li>
+                    <li><strong>Departamento:</strong> {{ $teacher->grupo?->carrera?->nombreCarrera ?? 'No asignado' }}</li>
+                    <li><strong>Grupo asignado:</strong> {{ $teacher->grupo?->nombreGrupo ?? 'No asignado' }}</li>
                     <li><strong>Estatus:</strong> 
-                        <span class="status-badge status-{{ $student->activo ? 'active' : 'inactive' }}">
-                            {{ $student->activo ? 'Activo' : 'Inactivo' }}
+                        <span class="status-badge status-{{ $teacher->activo ? 'active' : 'inactive' }}">
+                            {{ $teacher->activo ? 'Activo' : 'Inactivo' }}
                         </span>
                     </li>
-                    <li><strong>Fecha de registro:</strong> {{ \Carbon\Carbon::parse($student->fechaRegistro)->format('d/m/Y') }}</li>
+<li><strong>Fecha de registro:</strong> 
+    @if(is_numeric($teacher->fechaRegistro))
+        {{ \Carbon\Carbon::createFromTimestampMs($teacher->fechaRegistro)->format('d/m/Y') }}
+    @else
+        {{ $teacher->fechaRegistro ? \Carbon\Carbon::parse($teacher->fechaRegistro)->format('d/m/Y') : 'N/A' }}
+    @endif
+</li>
                 </ul>
             </div>
 
             <div class="profile-actions">
-                <a href="{{ route('students.index') }}" class="btn btn-secondary">
+                <a href="{{ route('teachers.index') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver a la lista
                 </a>
+                @can('edit teachers')
+                <a href="{{ route('teachers.edit', $teacher->_id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Editar Perfil
+                </a>
+                @endcan
             </div>
         </div>
     </section>
 </main>
 
 <style>
+    /* Estilos similares a los del alumno pero adaptados */
     .profile-container {
         display: flex;
         justify-content: center;
@@ -117,20 +130,33 @@
 
     .profile-actions {
         margin-top: 2rem;
-        text-align: right;
+        display: flex;
+        justify-content: space-between;
     }
 
-    .btn-secondary {
-        background: #ccc;
+    .btn {
         padding: 0.5rem 1rem;
         border-radius: 0.5rem;
         text-decoration: none;
-        color: #000;
         font-weight: bold;
         transition: background 0.3s ease;
     }
 
+    .btn-secondary {
+        background: #ccc;
+        color: #000;
+    }
+
     .btn-secondary:hover {
         background: #bbb;
+    }
+
+    .btn-primary {
+        background: #007bff;
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: #0069d9;
     }
 </style>

@@ -6,7 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard') - Red Social Estudiantil</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
 <style>
         :root {
             --primary-color: #7A1625; /* Vino/Guinda */
@@ -1306,6 +1310,10 @@
     </style>
 </head>
 <body>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
     <!-- Barra lateral de navegación -->
     <aside class="sidebar">
         <div class="logo">
@@ -1340,6 +1348,12 @@
                 <a href="{{ route('posts.index') }}" class="nav-link">
                     <i class="fas fa-comment-alt"></i>
                     <span>Publicaciones</span>
+                </a>
+            </li>
+                        <li class="nav-item">
+                <a href="{{ route('noticias.index') }}" class="nav-link">
+                    <i class="fas fa-comment-alt"></i>
+                    <span>Noticias</span>
                 </a>
             </li>
             <li class="nav-item">

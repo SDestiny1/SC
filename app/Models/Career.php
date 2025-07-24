@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Jenssegers\Mongodb\Eloquent\Model;
 
-class Carrera extends Model
+class Career extends Model
 {
     protected $collection = 'carrera'; // Nombre de tu colección en MongoDB
     protected $fillable = ['nombreCarrera', 'descripcion']; // Ajusta según tus campos
