@@ -44,7 +44,7 @@
 
         <div class="form-group">
             <button type="submit" class="btn btn-success">Guardar Noticia</button>
-            <a href="{{ route('posts.index') }}" class="btn btn-secondary">Cancelar</a>
+            <a href="{{ route('noticias.index') }}" class="btn btn-secondary">Cancelar</a>
         </div>
     </form>
 </main>

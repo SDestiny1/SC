@@ -4,15 +4,15 @@ namespace App\Models;
 
 use Jenssegers\Mongodb\Eloquent\Model;
 
-class Comment extends Model
+class Reaction extends Model
 {
     protected $connection = 'mongodb';
-    protected $collection = 'comentario';
+    protected $collection = 'reaccion';
     
     protected $fillable = [
         'publicacionID',
         'usuarioID',
-        'contenido',
+        'tipo',
         'fecha'
     ];
 

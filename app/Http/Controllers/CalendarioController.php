@@ -36,7 +36,8 @@ public function index()
                     'start' => $start,
                     'end' => $end,
                     'color' => $this->colorPorTipo($evento['tipoEvento'] ?? 'evento'),
-                    'description' => $evento['descripcion'] ?? '',
+                    'descripcion' => $evento['descripcion'] ?? '',
+                    'tipoEvento' => $evento['tipoEvento'] ?? 'evento', // ✅ Agregar esto
                 ];
             }
         }

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
         :root {
             --primary-color: #7A1625; /* Vino/Guinda */
@@ -1341,7 +1342,7 @@
             <li class="nav-item">
                 <a href="{{ route('calendario.index') }}" class="nav-link">
                     <i class="fas fa-calendar-check"></i>
-                    <span>Canlendario Escolar</span>
+                    <span>Calendario Escolar</span>
                 </a>
             </li>
             <li class="nav-item">

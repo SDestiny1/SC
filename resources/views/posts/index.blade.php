@@ -9,7 +9,13 @@
             <h1><i class="fas fa-comment-alt"></i> Gestión de Publicaciones</h1>
             <div class="user-info">
                 <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Usuario">
-                <span>María González</span>
+                <span>
+                {{ trim(
+                    (Auth::user()->nombre ?? '') . ' ' .
+                    (Auth::user()->apellidoPaterno ?? '') . ' ' .
+                    (Auth::user()->apellidoMaterno ?? '')
+                ) }}
+            </span>
             </div>
         </header>
 
@@ -20,10 +26,6 @@
                 <input type="text" id="search-input" placeholder="Buscar publicaciones por título, autor o contenido...">
             </div>
             <div class="action-buttons">
-                <a href="{{ route('posts.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i>
-                    <span>Crear Noticia</span>
-                </a>
                 <button class="btn btn-secondary" id="toggle-filters">
                     <i class="fas fa-filter"></i>
                     <span>Filtros</span>
@@ -109,25 +111,33 @@
                     @if($post->imagenURL)
                         <img src="{{ $post->imagenURL }}" alt="Imagen publicación" class="publication-image">
                     @endif
-
                     <div class="publication-actions">
                         <div class="publication-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-comment"></i>
-                                <span>{{ $post->comentarios_count ?? 0 }}</span>
-                            </div>
+<div class="stat-item">
+  <i class="fas fa-thumbs-up"></i>
+  <a href="{{ route('posts.show', $post->_id) }}" style="color: inherit; text-decoration: none;">
+    {{ $post->likes_count ?? 0 }}
+  </a>
+</div>
+<div class="stat-item">
+  <i class="fas fa-comment"></i>
+  <a href="{{ route('posts.show', $post->_id) }}" style="color: inherit; text-decoration: none;">
+    {{ $post->comentarios_count ?? 0 }}
+  </a>
+</div>
+
                         </div>
                         <div class="publication-admin-actions">
-                        <form id="toggle-status-form-{{ $post->_id }}" action="{{ route('posts.toggle-status', $post->_id) }}" method="POST" class="status-form">
-                            @csrf
-                            @method('PATCH')
-                            <button type="button" 
-                                    onclick="confirmToggleStatus('{{ $post->_id }}')"
-                                    class="action-btn {{ $post->activo ? 'status-inactive' : 'status-active' }}">
-                                <i class="fas {{ $post->activo ? 'fa-toggle-off' : 'fa-toggle-on' }}"></i>
-                                {{ $post->activo ? 'Desactivar' : 'Activar' }}
-                            </button>
-                        </form>
+                            <form id="toggle-status-form-{{ $post->_id }}" action="{{ route('posts.toggle-status', $post->_id) }}" method="POST" class="status-form">
+                                @csrf
+                                @method('PATCH')
+                                <button type="button" 
+                                        onclick="confirmToggleStatus('{{ $post->_id }}')"
+                                        class="action-btn {{ $post->activo ? 'status-inactive' : 'status-active' }}">
+                                    <i class="fas {{ $post->activo ? 'fa-toggle-off' : 'fa-toggle-on' }}"></i>
+                                    {{ $post->activo ? 'Desactivar' : 'Activar' }}
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

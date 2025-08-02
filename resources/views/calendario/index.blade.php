@@ -5,10 +5,17 @@
     <main class="main-content">
         <header class="header">
             <h1><i class="fas fa-calendar-alt"></i> Calendario Escolar</h1>
-            <div class="user-info">
-                <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Usuario">
-                <span>María González</span>
-            </div>
+<div class="user-info">
+    <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Usuario">
+    <span>
+    {{ trim(
+        (Auth::user()->nombre ?? '') . ' ' .
+        (Auth::user()->apellidoPaterno ?? '') . ' ' .
+        (Auth::user()->apellidoMaterno ?? '')
+    ) }}
+</span>
+</div>
+
         </header>
 
         <div class="calendar-container">
@@ -42,9 +49,6 @@
             <select id="event-type" name="tipo" class="event-type-selector" required>
                 <option value="evento">Evento</option>
                 <option value="periodo">Periodo</option>
-                <option value="inicio ciclo">Inicio de Ciclo</option>
-                <option value="evaluaciones">Evaluaciones</option>
-                <option value="día feriado">Día Feriado</option>
             </select>
 
         </div>
@@ -192,81 +196,109 @@
 
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
 
-    <script>
-        // Mostrar/ocultar campos según tipo de evento
-        const eventTypeSelector = document.querySelector('.event-type-selector');
-        const eventDateField = document.querySelector('.event-date-field');
-        const periodDateFields = document.querySelector('.period-date-fields');
-        
-eventTypeSelector.addEventListener('change', function () {
-    const tipo = this.value;
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: @json($eventos ?? []),
+        eventDisplay: 'block',
+        eventDidMount: function(info) {
+            if (info.event.extendedProps.tipoEvento) {
+                info.el.setAttribute('title', info.event.extendedProps.tipoEvento);
+            }
+        },
+eventClick: function(info) {
+    const evento = info.event;
+    const props = evento.extendedProps;
 
-    if (tipo === 'evento' || tipo === 'día feriado' || tipo === 'inicio ciclo') {
-        eventDateField.style.display = 'block';
-        document.getElementById('event-date').setAttribute('required', 'required');
+    let isEditable = false;
 
-        periodDateFields.style.display = 'none';
-        document.getElementById('period-start').removeAttribute('required');
-        document.getElementById('period-end').removeAttribute('required');
-    } else if (tipo === 'periodo' || tipo === 'evaluaciones') {
-        eventDateField.style.display = 'none';
-        document.getElementById('event-date').removeAttribute('required');
+    const contentHTML = () => `
+        <form id="editar-evento-form" style="text-align: center;">
+            <input type="text" id="nombre-evento" value="${evento.title}" ${!isEditable ? 'readonly' : ''} 
+                class="text-center w-full font-bold text-lg bg-transparent mb-2 border-none outline-none" />
 
-        periodDateFields.style.display = 'block';
-        document.getElementById('period-start').setAttribute('required', 'required');
-        document.getElementById('period-end').setAttribute('required', 'required');
-    }
-});
+            <input type="text" id="tipo-evento" value="${props.tipoEvento || ''}" ${!isEditable ? 'readonly' : ''} 
+                class="text-center w-full text-base bg-transparent mb-2 border-none outline-none" placeholder="Tipo de evento" />
 
-        // Mostrar modal de ejemplo
-        const showExampleBtn = document.getElementById('show-example-btn');
-        const exampleModal = document.getElementById('example-modal');
-        const closeModal = document.querySelector('.close-modal');
-        
-        showExampleBtn.addEventListener('click', function() {
-            exampleModal.style.display = 'flex';
-        });
-        
-        closeModal.addEventListener('click', function() {
-            exampleModal.style.display = 'none';
-        });
-        
-        // Cerrar modal al hacer clic fuera
-        exampleModal.addEventListener('click', function(e) {
-            if (e.target === exampleModal) {
-                exampleModal.style.display = 'none';
+            <input type="date" id="fecha-inicio" value="${evento.startStr}" ${!isEditable ? 'readonly' : ''} 
+                class="text-center w-full text-base bg-transparent mb-2 border-none outline-none" />
+
+            <input type="date" id="fecha-fin" value="${evento.endStr || evento.startStr}" ${!isEditable ? 'readonly' : ''} 
+                class="text-center w-full text-base bg-transparent mb-2 border-none outline-none" />
+
+            <textarea id="descripcion-evento" ${!isEditable ? 'readonly' : ''} placeholder="Descripción"
+                class="text-center w-full text-base bg-transparent resize-none border-none outline-none">${props.descripcion || ''}</textarea>
+        </form>
+    `;
+
+    const showModal = (editable = false) => {
+        isEditable = editable;
+
+        Swal.fire({
+            title: 'Detalles del Evento',
+            html: contentHTML(),
+            showCancelButton: true,
+            confirmButtonText: editable ? 'Guardar' : 'Editar',
+            cancelButtonText: editable ? 'Cancelar' : 'Cerrar',
+            didOpen: () => {
+                if (editable) {
+                    ['nombre-evento', 'tipo-evento', 'fecha-inicio', 'fecha-fin', 'descripcion-evento'].forEach(id => {
+                        document.getElementById(id).removeAttribute('readonly');
+                    });
+                }
+            },
+            preConfirm: () => {
+                if (editable) {
+                    const datosEditados = {
+                        id: evento.id,
+                        nombre: document.getElementById('nombre-evento').value,
+                        tipoEvento: document.getElementById('tipo-evento').value,
+                        fechaInicio: document.getElementById('fecha-inicio').value,
+                        fechaFin: document.getElementById('fecha-fin').value,
+                        descripcion: document.getElementById('descripcion-evento').value
+                    };
+                    console.log("Editar evento:", datosEditados);
+                    Swal.fire('Actualizado', 'El evento ha sido editado (simulado).', 'success');
+                } else {
+                    showModal(true); // Activa modo edición
+                }
             }
         });
+    };
 
-        // Inicializar FullCalendar
-        document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar');
+    showModal(false);
+}
 
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                locale: 'es',  // español
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                events: @json($eventos ?? []),
-                eventDisplay: 'block',
-                // Opcional: tooltip con el tipo de evento
-                eventDidMount: function(info) {
-                    if(info.event.extendedProps.tipoEvento){
-                        info.el.setAttribute('title', info.event.extendedProps.tipoEvento);
-                    }
-                }
-            });
 
-            calendar.render();
-            document.getElementById('download-template-btn').addEventListener('click', function() {
-    window.location.href = "{{ route('plantilla.calendario') }}";
+    });
+
+    calendar.render();
+
+    // Botón de plantilla Excel
+    document.getElementById('download-template-btn').addEventListener('click', function() {
+        window.location.href = "{{ route('plantilla.calendario') }}";
+    });
 });
-        });
-    </script>
+</script>
+
+<style>
+    .swal2-html-container input, 
+    .swal2-html-container textarea {
+        border: none !important;
+        outline: none !important;
+        text-align: center;
+        background: transparent;
+    }
+</style>
 
     
 

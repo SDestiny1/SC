@@ -9,7 +9,13 @@
             <h1><i class="fas fa-chalkboard-teacher"></i> Gestión de Personal Académico</h1>
             <div class="user-info">
                 <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Usuario">
-                <span>María González</span>
+                <span>
+                {{ trim(
+                    (Auth::user()->nombre ?? '') . ' ' .
+                    (Auth::user()->apellidoPaterno ?? '') . ' ' .
+                    (Auth::user()->apellidoMaterno ?? '')
+                ) }}
+            </span>
             </div>
         </header>
 
@@ -28,11 +34,6 @@
             <div class="stat-card">
                 <div class="stat-label"><i class="fas fa-users"></i> Grupos Asignados</div>
                 <div class="stat-value">{{ $totalGroups }}</div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-label"><i class="fas fa-clock"></i> Docentes Activos</div>
-                <div class="stat-value">{{ $activeTeachers }}</div>
             </div>
         </div>
 
@@ -204,6 +205,7 @@
         @endif
     </main>
 
+    
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Mostrar/ocultar filtros

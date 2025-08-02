@@ -7,6 +7,12 @@ use App\Models\User;
 use App\Models\Group;
 use Carbon\Carbon;
 use App\Models\Career; 
+use App\Imports\StudentsImport;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+
+
 class StudentController extends Controller
 {
    public function index(Request $request)
@@ -27,7 +33,7 @@ class StudentController extends Controller
         });
     }
     
-    // Filtro por carrera (corregido)
+    // Filtro por carrera
     if ($request->filled('carreraID')) {
         $query->whereHas('grupo', function($q) use ($request) {
             $q->where('carreraID', $request->carreraID);
@@ -112,21 +118,62 @@ public function destroy($id)
 
 public function show($id)
 {
-    $student = User::where('_id', $id)
-        ->where('rol', 'alumno')
-        ->with(['grupo' => function($query) {
-            $query->with('carrera');
-        }])
-        ->firstOrFail();
+    try {
+        $student = User::where('_id', $id)
+            ->where('rol', 'alumno')
+            ->with(['grupo' => function($query) {
+                $query->with('carrera');
+            }])
+            ->firstOrFail();
 
-if ($student->fechaNacimiento instanceof \MongoDB\BSON\UTCDateTime) {
-    $student->fechaNacimiento = Carbon::instance($student->fechaNacimiento->toDateTime());
+        if ($student->fechaNacimiento instanceof \MongoDB\BSON\UTCDateTime) {
+            $student->fechaNacimiento = Carbon::instance($student->fechaNacimiento->toDateTime());
+        }
+
+        if ($student->fechaRegistro instanceof \MongoDB\BSON\UTCDateTime) {
+            $student->fechaRegistro = Carbon::instance($student->fechaRegistro->toDateTime());
+        }
+
+        if (request()->ajax()) {
+            return view('students._show', compact('student'));
+        }
+
+        return view('students.show', compact('student'));
+
+    } catch (\Throwable $e) {
+        \Log::error('Error al mostrar alumno: ' . $e->getMessage());
+        return response()->json(['error' => 'Error interno al mostrar alumno.'], 500);
+    }
 }
 
-if ($student->fechaRegistro instanceof \MongoDB\BSON\UTCDateTime) {
-    $student->fechaRegistro = Carbon::instance($student->fechaRegistro->toDateTime());
-}
 
-    return view('students.show', compact('student'));
+public function import(Request $request)
+{
+    $request->validate([
+        'file' => 'required|file|mimes:xlsx,xls,csv'
+    ]);
+    
+    try {
+        $import = new StudentsImport();
+        Excel::import($import, $request->file('file'));
+        
+        $response = [
+            'imported' => $import->getImportedCount(),
+            'skipped' => $import->getSkippedCount(),
+            'message' => 'Importación completada'
+        ];
+        
+        if ($import->getSkippedCount() > 0) {
+            $response['errors'] = $import->getErrors();
+        }
+        
+        return response()->json($response);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Error al procesar el archivo: ' . $e->getMessage(),
+            'trace' => env('APP_DEBUG') ? $e->getTrace() : null
+        ], 500);
+    }
 }
 }

@@ -7,27 +7,18 @@
             <h1>Dashboard Administrativo</h1>
             <div class="user-info">
                 <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Usuario">
-                <span>María González</span>
+                <span>
+                {{ trim(
+                    (Auth::user()->nombre ?? '') . ' ' .
+                    (Auth::user()->apellidoPaterno ?? '') . ' ' .
+                    (Auth::user()->apellidoMaterno ?? '')
+                ) }}
+            </span>
             </div>
         </header>
 
                 <!-- Widgets principales -->
         <div class="dashboard-widgets">
-            <!-- Usuarios Activos -->
-            <div class="widget">
-                <div class="widget-header">
-                    <h3 class="widget-title">Usuarios Activos</h3>
-                    <div class="widget-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
-                    <div class="widget-value">{{ $activeUsersCount ?? 0 }}</div>
-                <div class="widget-footer">
-                    <i class="fas fa-user-check"></i>
-                    <span>Usuarios activos en la plataforma</span>
-                </div>
-            </div>
-
             <!-- Publicaciones Alumnos -->
             <div class="widget">
                 <div class="widget-header">

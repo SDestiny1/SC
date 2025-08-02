@@ -12,29 +12,43 @@ use MongoDB\BSON\ObjectId;
 use Illuminate\Support\Facades\Storage;
 
 
+
 class PostController extends Controller
 {
-    public function index()
-    {
-        $posts = Publication::with('user')
-                      ->orderBy('fecha', 'desc')
-                      ->paginate(10);
-        // Convertimos el campo fecha para cada post
-                        foreach ($posts as $post) {
-                    // Convertir fecha si es tipo UTCDateTime
-                    if ($post->fecha instanceof UTCDateTime) {
-                        $post->fecha_carbon = Carbon::createFromTimestampMs($post->fecha->toDateTime()->format('Uv'));
-                    } else {
-                        try {
-                            $timestamp = is_numeric($post->fecha) ? intval($post->fecha) : strtotime($post->fecha);
-                            $post->fecha_carbon = Carbon::createFromTimestampMs($timestamp);
-                        } catch (\Exception $e) {
-                            $post->fecha_carbon = Carbon::now();
-                        }
-                    }
-                }
-        return view('posts.index', compact('posts'));
+public function index()
+{
+    $posts = Publication::orderBy('fecha', 'desc')->get();
+
+    foreach ($posts as $post) {
+        // Fecha
+        if ($post->fecha instanceof UTCDateTime) {
+            $post->fecha_carbon = Carbon::createFromTimestampMs($post->fecha->toDateTime()->format('Uv'));
+        } else {
+            try {
+                $timestamp = is_numeric($post->fecha) ? intval($post->fecha) : strtotime($post->fecha);
+                $post->fecha_carbon = Carbon::createFromTimestampMs($timestamp);
+            } catch (\Exception $e) {
+                $post->fecha_carbon = Carbon::now();
+            }
+        }
+
+        // Contar comentarios por publicacionID
+        $post->comentarios_count = \DB::connection('mongodb')
+            ->collection('comentario')
+            ->where('publicacionID', new ObjectId($post->_id))
+            ->count();
+
+        // Contar likes desde colección 'reaccion' con tipo = 'like'
+        $post->likes_count = \DB::connection('mongodb')
+            ->collection('reaccion')
+            ->where('publicacionID', new ObjectId($post->_id))
+            ->where('tipo', 'like')
+            ->count();
     }
+
+    return view('posts.index', compact('posts'));
+}
+
 
     public function destroy($id)
     {
@@ -120,7 +134,7 @@ public function store(Request $request)
     // Procesar imagen si se subió
     $imagenURL = null;
     if ($request->hasFile('imagen')) {
-        $path = $request->file('imagen')->store('public/noticias');
+$path = $request->file('imagen')->store('public/noticias');
         $imagenURL = Storage::url($path); // genera una URL como /storage/noticias/archivo.jpg
     }
 
@@ -148,6 +162,50 @@ public function mostrarNoticias()
         ->get();
 
     return view('noticias.index', compact('noticias'));
+}
+
+public function show($id)
+{
+    // Buscar la publicación
+    $post = Publication::findOrFail($id);
+
+    // Formatear fecha
+if ($post->fecha instanceof UTCDateTime) {
+    $post->fecha_carbon = Carbon::createFromTimestampMs($post->fecha->toDateTime()->format('Uv'));
+} else {
+    try {
+        if (is_numeric($post->fecha)) {
+            $timestamp = (int) $post->fecha;
+            // Si el timestamp es mayor a 10^12 asumimos milisegundos
+            if ($timestamp > 1000000000000) {
+                $timestamp = (int) ($timestamp / 1000);
+            }
+        } else {
+            $timestamp = strtotime($post->fecha);
+        }
+        $post->fecha_carbon = Carbon::createFromTimestamp($timestamp);
+    } catch (\Exception $e) {
+        \Log::error('Error parseando fecha: ' . $e->getMessage());
+        $post->fecha_carbon = Carbon::now();
+    }
+}
+
+
+    // Obtener comentarios relacionados
+    $comentarios = \DB::connection('mongodb')
+        ->collection('comentario')
+        ->where('publicacionID', new ObjectId($post->_id))
+        ->orderBy('fecha', 'desc')
+        ->get();
+
+    // Obtener usuarios que dieron like (reacciones con tipo 'like')
+    $likes = \DB::connection('mongodb')
+        ->collection('reaccion')
+        ->where('publicacionID', new ObjectId($post->_id))
+        ->where('tipo', 'like')
+        ->get();
+
+    return view('posts.show', compact('post', 'comentarios', 'likes'));
 }
 
 }

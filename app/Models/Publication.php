@@ -19,10 +19,26 @@ class Publication extends Model
         'imagenURL',
         'activo'
     ];
-        public function user()
-    {
-        return $this->belongsTo(User::class, 'autorID', '_id');
-    }
+public function user()
+{
+    return $this->belongsTo(User::class, 'autorID', '_id'); // Si usas MongoDB con IDs personalizados
+}
+
+public function comentarios()
+{
+    return $this->hasMany(Comment::class, 'publicacionID', '_id');
+}
+
+public function reacciones()
+{
+    return $this->hasMany(Reaction::class, 'publicacionID', '_id');
+}
+
+public function likes()
+{
+    return $this->hasMany(Reaction::class, 'publicacionID', '_id')->where('tipo', 'like');
+}
+
 
         public function carrera()
     {

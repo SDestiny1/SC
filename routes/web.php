@@ -36,6 +36,8 @@ Route::resource('teachers', controller: TeacherController::class);
 Route::resource('posts', PostController::class);
 Route::patch('/posts/{post}/toggle-status', [PostController::class, 'toggleStatus'])
     ->name('posts.toggle-status');
+Route::get('/posts/{id}', [PostController::class, 'show'])->name('posts.show');
+
 
 Route::resource('groups', GroupController::class);
 
@@ -51,3 +53,8 @@ Route::get('/plantilla-calendario', function () {
 Route::post('/calendario/importar', [CalendarioController::class, 'importar'])->name('calendario.importar');
 
 Route::get('/noticias', [PostController::class, 'mostrarNoticias'])->name('noticias.index');
+
+// En routes/web.php
+Route::post('/students/import', [StudentController::class, 'import'])
+    ->name('students.import')
+    ->middleware('auth'); // Asegúrate de que el usuario esté autenticado
