@@ -140,5 +140,27 @@ public function importar(Request $request)
         return back()->withErrors(['error' => 'Error al importar: '.$e->getMessage()]);
     }
 }
+public function destroy($year, $eventIndex)
+{
+    try {
+        $calendario = SchoolCalendar::where('_id', 'calendario_'.$year)->firstOrFail();
+        
+        // Elimina el evento del array
+        $eventos = $calendario->eventos;
+        array_splice($eventos, $eventIndex, 1);
+        
+        $calendario->eventos = $eventos;
+        $calendario->save();
 
+        return response()->json([
+            'success' => true,
+            'message' => 'Evento eliminado correctamente'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al eliminar: ' . $e->getMessage()
+        ], 500);
+    }
+}
 }

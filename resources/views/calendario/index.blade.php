@@ -193,6 +193,10 @@
             </div>
         </div>
     </div>
+    <script>
+    // Agrega esto al inicio de tus scripts
+    window.CSRF_TOKEN = '{{ csrf_token() }}';
+</script>
 
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
@@ -206,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            right: 'dayGridMonth'
         },
         events: @json($eventos ?? []),
         eventDisplay: 'block',
@@ -249,6 +253,9 @@ eventClick: function(info) {
             showCancelButton: true,
             confirmButtonText: editable ? 'Guardar' : 'Editar',
             cancelButtonText: editable ? 'Cancelar' : 'Cerrar',
+            showDenyButton: !editable,
+            denyButtonText: 'Eliminar',
+            denyButtonColor: '#dc3545',
             didOpen: () => {
                 if (editable) {
                     ['nombre-evento', 'tipo-evento', 'fecha-inicio', 'fecha-fin', 'descripcion-evento'].forEach(id => {
@@ -269,15 +276,62 @@ eventClick: function(info) {
                     console.log("Editar evento:", datosEditados);
                     Swal.fire('Actualizado', 'El evento ha sido editado (simulado).', 'success');
                 } else {
-                    showModal(true); // Activa modo edición
+                    showModal(true);
                 }
+            },
+            preDeny: () => {
+    return new Promise((resolve) => {
+        Swal.fire({
+            title: '¿Eliminar evento?',
+            text: "Esta acción no se puede deshacer",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Obtén el índice del evento en el array
+                const eventIndex = evento.extendedProps.indice;
+                const year = '2025A'; // O obténlo dinámicamente
+                
+                fetch(`/calendario/${year}/${eventIndex}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': window.CSRF_TOKEN,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Error en la respuesta');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('¡Eliminado!', data.message, 'success');
+                        evento.remove();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                    resolve(true);
+                })
+                .catch(error => {
+                    Swal.fire('Error', error.message, 'error');
+                    resolve(false);
+                });
+            } else {
+                resolve(false);
             }
+        });
+    });
+}
         });
     };
 
     showModal(false);
 }
-
 
     });
 

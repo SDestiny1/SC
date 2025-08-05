@@ -8,7 +8,7 @@ class Notice extends Model
 {
     protected $connection = 'mongodb';
     protected $collection = 'noticia';
-    
+
     protected $fillable = [
         'autorID',
         'titulo',
@@ -16,10 +16,20 @@ class Notice extends Model
         'fechaCreacion',
         'fechaPublicacion',
         'activo',
+        'imagenLocalPath',
         'imagenURL'
     ];
-        public function user()
-    {
-        return $this->belongsTo(User::class, 'autorID', '_id');
-    }
+
+    protected $casts = [
+        'fechaCreacion' => 'datetime',
+        'fechaPublicacion' => 'datetime',
+        'activo' => 'boolean'
+    ];
+
+public function user()
+{
+    return $this->belongsTo(User::class, 'autorID', '_id');
 }
+
+}
+

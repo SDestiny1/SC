@@ -27,6 +27,8 @@ class User extends Eloquent implements AuthenticatableContract
     ];
 
     protected $hidden = ['password'];
+    protected $dates = ['fechaRegistro', 'created_at', 'updated_at'];
+
 
 public function grupo()
 {
@@ -44,8 +46,25 @@ public function grupo()
     }
 
         public function materia()
-    {
-        return $this->belongsTo(Subject::class, 'materiaID', '_id');
-    }
+{
+    return $this->hasMany(Subject::class, 'docenteID', '_id');
+}
+
+    public function materias()
+{
+    return ClassSchedule::where('clases.docenteID', $this->_id)
+        ->get()
+        ->flatMap(function ($schedule) {
+            return collect($schedule->clases)
+                ->where('docenteID', $this->_id)
+                ->pluck('materiaID');
+        })
+        ->unique()
+        ->map(function ($materiaID) {
+            return Subject::where('_id', $materiaID)->first();
+        })
+        ->filter();
+}
+
 }
 

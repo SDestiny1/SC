@@ -9,8 +9,9 @@ use Carbon\Carbon;
 use MongoDB\BSON\UTCDateTime;
 use App\Models\Comment;
 use MongoDB\BSON\ObjectId;
+use App\Models\Post;
 use Illuminate\Support\Facades\Storage;
-
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 
 class PostController extends Controller
@@ -104,7 +105,7 @@ public function index()
 public function toggleStatus($id)
 {
     try {
-        $post = Post::findOrFail($id);
+        $post = Publication::findOrFail($id);
         $newStatus = !$post->activo;
         $post->update(['activo' => $newStatus]);
         
@@ -121,91 +122,79 @@ public function create()
 {
     return view('posts.create');
 }
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'titulo' => 'required|string|max:255',
-        'contenido' => 'required|string',
-        'fechaPublicacion' => 'required|date|after_or_equal:fechaCreacion',
-        'activo' => 'required|boolean',
-        'imagen' => 'nullable|image|max:2048' // máximo 2MB
-    ]);
 
-    // Procesar imagen si se subió
-    $imagenURL = null;
-    if ($request->hasFile('imagen')) {
-$path = $request->file('imagen')->store('public/noticias');
-        $imagenURL = Storage::url($path); // genera una URL como /storage/noticias/archivo.jpg
-    }
 
-    // Asignar el documento de forma segura
-    $documento = [
-        'autorID' => (string) auth()->user()->_id,
-        'titulo' => $validated['titulo'],
-        'contenido' => $validated['contenido'],
-        'fechaCreacion' => now()->toISOString(),
-        'fechaPublicacion' => $validated['fechaPublicacion'],
-        'activo' => (bool) $validated['activo'],
-        'imagenURL' => $imagenURL
-    ];
-
-    // Insertar en la colección correcta
-    \DB::connection('mongodb')->collection('noticia')->insert($documento);
-
-    return redirect()->route('posts.index')->with('success', 'Noticia creada correctamente.');
-}
-
-public function mostrarNoticias()
-{
-    $noticias = \DB::connection('mongodb')->collection('noticia')
-        ->orderBy('fechaCreacion', 'desc')
-        ->get();
-
-    return view('noticias.index', compact('noticias'));
-}
 
 public function show($id)
 {
-    // Buscar la publicación
     $post = Publication::findOrFail($id);
 
-    // Formatear fecha
-if ($post->fecha instanceof UTCDateTime) {
-    $post->fecha_carbon = Carbon::createFromTimestampMs($post->fecha->toDateTime()->format('Uv'));
-} else {
-    try {
-        if (is_numeric($post->fecha)) {
-            $timestamp = (int) $post->fecha;
-            // Si el timestamp es mayor a 10^12 asumimos milisegundos
-            if ($timestamp > 1000000000000) {
-                $timestamp = (int) ($timestamp / 1000);
-            }
-        } else {
-            $timestamp = strtotime($post->fecha);
+    // Convertir fecha publicación a string ISO 8601 o formato legible
+    $postArray = $post->toArray();
+
+    if ($post->fecha instanceof \MongoDB\BSON\UTCDateTime) {
+        $postArray['fecha'] = $post->fecha->toDateTime()->format('c'); // ISO 8601
+    } else {
+        // Intentar formatear de forma segura
+        try {
+            $dt = Carbon::parse($post->fecha);
+            $postArray['fecha'] = $dt->format('c');
+        } catch (\Exception $e) {
+            $postArray['fecha'] = null;
         }
-        $post->fecha_carbon = Carbon::createFromTimestamp($timestamp);
-    } catch (\Exception $e) {
-        \Log::error('Error parseando fecha: ' . $e->getMessage());
-        $post->fecha_carbon = Carbon::now();
     }
-}
+
+    // Obtener comentarios
+$comentarios = \DB::connection('mongodb')
+    ->collection('comentario')
+    ->where('publicacionID', new ObjectId($post->_id))
+    ->orderBy('fecha', 'desc')
+    ->get()
+    ->map(function($comentario) {
+        // Formatear fecha
+        if (isset($comentario['fecha']) && $comentario['fecha'] instanceof \MongoDB\BSON\UTCDateTime) {
+            $comentario['fecha'] = $comentario['fecha']->toDateTime()->format('c');
+        }
+
+        // Buscar nombre del usuario
+        $usuario = \DB::connection('mongodb')
+            ->collection('usuarios')
+            ->where('_id', $comentario['usuarioID']) // "_id" es el correo
+            ->first();
+
+        if ($usuario) {
+            $comentario['autorNombre'] = trim(
+                ($usuario['nombre'] ?? '') . ' ' .
+                ($usuario['apellidoPaterno'] ?? '') . ' ' .
+                ($usuario['apellidoMaterno'] ?? '')
+            );
+        } else {
+            $comentario['autorNombre'] = 'Anónimo';
+        }
+
+        return $comentario;
+    });
 
 
-    // Obtener comentarios relacionados
-    $comentarios = \DB::connection('mongodb')
-        ->collection('comentario')
-        ->where('publicacionID', new ObjectId($post->_id))
-        ->orderBy('fecha', 'desc')
-        ->get();
-
-    // Obtener usuarios que dieron like (reacciones con tipo 'like')
+    // Likes (opcional)
     $likes = \DB::connection('mongodb')
         ->collection('reaccion')
         ->where('publicacionID', new ObjectId($post->_id))
         ->where('tipo', 'like')
         ->get();
 
+    if (request()->wantsJson()) {
+        return response()->json([
+            'post' => $postArray,
+            'comentarios' => $comentarios,
+            'likes' => $likes,
+        ]);
+    }
+
     return view('posts.show', compact('post', 'comentarios', 'likes'));
 }
+
+
+
 
 }

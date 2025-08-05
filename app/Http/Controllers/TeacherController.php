@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClassSchedule;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Subject;
 use App\Models\Group;
 use App\Models\Career; // Asegúrate de que Carrera esté correctamente importado
 use Carbon\Carbon;
+use App\Imports\DocentesImport;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Teacher; // Asegúrate de que Teacher esté correctamente importado
 
 class TeacherController extends Controller
 
@@ -153,15 +157,129 @@ public function show($id)
         ->with(['grupo.carrera', 'materia'])
         ->firstOrFail();
 
-    // Si es un objeto UTCDateTime de MongoDB
     if ($teacher->fechaRegistro instanceof \MongoDB\BSON\UTCDateTime) {
         $teacher->fechaRegistro = Carbon::instance($teacher->fechaRegistro->toDateTime());
     }
-    
+
     if ($teacher->fechaNacimiento instanceof \MongoDB\BSON\UTCDateTime) {
         $teacher->fechaNacimiento = Carbon::instance($teacher->fechaNacimiento->toDateTime());
     }
 
-    return view('teachers.show', compact('teacher'));
+    // Obtener materias del departamento solo si el docente tiene grupo y carrera
+    $materiasDepartamento = collect();
+    if ($teacher->grupo && $teacher->grupo->carrera) {
+        $materiasDepartamento = Subject::where('carreraID', $teacher->grupo->carrera->_id)->get();
+    }
+
+    return view('teachers.show', compact('teacher', 'materiasDepartamento'));
 }
+
+public function assignSchedule(Request $request)
+{
+    try {
+        $teacherId = $request->input('teacher_id');  // debe coincidir con lo que envías
+        $subjectId = $request->input('subject_id');
+        $scheduleData = $request->input('schedules'); // arreglo con días y horarios
+
+        $teacher = User::where('_id', $teacherId)->where('rol', 'docente')->first();
+        if (!$teacher) {
+            return response()->json([
+                'success' => false,
+                'message' => "Docente no encontrado con ID: $teacherId"
+            ]);
+        }
+
+        // Asignar materia si no está asignada
+        if (!$teacher->materiaID || !in_array($subjectId, (array) $teacher->materiaID)) {
+            $teacher->push('materiaID', $subjectId);
+        }
+
+        foreach ($scheduleData as $dia => $horas) {
+            // $horas es un array de strings con formato "HH:MM - HH:MM"
+            foreach ($horas as $hora) {
+                list($horaInicio, $horaFin) = array_map('trim', explode('-', $hora));
+
+                $horarioExistente = ClassSchedule::where('grupoID', $teacher->grupoID)
+                    ->where('diaSemana', strtolower($dia))
+                    ->first();
+
+                if ($horarioExistente) {
+                    // Verificar conflicto: misma hora inicio y fin
+                    $conflicto = collect($horarioExistente->clases)->first(function ($clase) use ($horaInicio, $horaFin) {
+                        return $clase['horaInicio'] === $horaInicio && $clase['horaFin'] === $horaFin;
+                    });
+
+                    if (!$conflicto) {
+                        $horarioExistente->push('clases', [
+                            'horaInicio' => $horaInicio,
+                            'horaFin' => $horaFin,
+                            'materiaID' => $subjectId,
+                            'docenteID' => $teacherId,
+                            'activo' => true,
+                        ]);
+                    }
+                } else {
+                    // Crear documento para ese día si no existe aún
+                    ClassSchedule::create([
+                        'grupoID' => $teacher->grupoID,
+                        'cicloID' => '2025-A', // ajustar si es dinámico
+                        'diaSemana' => strtolower($dia),
+                        'clases' => [
+                            [
+                                'horaInicio' => $horaInicio,
+                                'horaFin' => $horaFin,
+                                'materiaID' => $subjectId,
+                                'docenteID' => $teacherId,
+                                'activo' => true,
+                            ]
+                        ]
+                    ]);
+                }
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Horario asignado con éxito.']);
+
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => 'Error al asignar el horario: ' . $e->getMessage()]);
+    }
+}
+
+
+
+public function import(Request $request)
+{
+    try {
+        if (!$request->hasFile('file')) {
+            return response()->json(['message' => 'Archivo no proporcionado.'], 400);
+        }
+
+        $import = new DocentesImport();
+        Excel::import($import, $request->file('file'));
+
+        return response()->json([
+            'imported' => $import->imported,
+            'skipped' => $import->skipped,
+            'errors' => $import->skippedDetails,  // ahora sí se envía el detalle de errores
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'message' => 'Error interno',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+}
+
+public function createSchedule($teacherId)
+{
+    $teacher = Teacher::findOrFail($teacherId);
+    $materias = Subject::where('carreraID', $teacher->grupo->carrera->_id)->get();
+
+    return view('teachers.schedule.create', compact('teacher', 'materias'));
+}
+
+
+
+
 }

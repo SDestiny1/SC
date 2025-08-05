@@ -41,6 +41,8 @@
                 <option value="">Todos</option>
                 <option value="pregunta">Pregunta</option>
                 <option value="aviso">Aviso</option>
+                <option value="general">General</option>
+                <option value="Ayuda">Ayuda</option>
             </select>
         </div>
         <div class="filter-group">
@@ -94,8 +96,8 @@
                             </h3>
                             <div class="publication-meta">
                                 <div class="publication-author">
-                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($post->user->name ?? 'Anonimo') }}" alt="Autor" class="author-avatar">
-                                    <span class="author-name">{{ $post->user->name ?? $post->autorID }}</span>
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($post->user->nombre ?? 'Anonimo') }}" alt="Autor" class="author-avatar">
+                                    <span class="author-name">{{ $post->user->nombre ?? $post->autorID }}</span>
                                 </div>
                                 <span class="publication-date">
                                     {{ $post->fecha_carbon ? $post->fecha_carbon->format('d/m/Y') : '?' }}
@@ -119,12 +121,11 @@
     {{ $post->likes_count ?? 0 }}
   </a>
 </div>
-<div class="stat-item">
+<div class="stat-item comment-btn" data-post-id="{{ $post->_id }}" style="cursor:pointer;">
   <i class="fas fa-comment"></i>
-  <a href="{{ route('posts.show', $post->_id) }}" style="color: inherit; text-decoration: none;">
-    {{ $post->comentarios_count ?? 0 }}
-  </a>
+  <span>{{ $post->comentarios_count ?? 0 }}</span>
 </div>
+
 
                         </div>
                         <div class="publication-admin-actions">
@@ -156,6 +157,27 @@
             <button class="page-btn">5</button>
             <button class="page-btn"><i class="fas fa-chevron-right"></i></button>
         </div>
+
+        <!-- Modal para mostrar comentarios -->
+<div id="commentsModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+    background: rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:#fff; padding:20px; border-radius:8px; width:90%; max-width:900px; max-height:80vh; overflow-y:auto; position:relative; display:flex; gap:20px;">
+
+    <button id="closeModalBtn" style="position:absolute; top:10px; right:10px; font-size:18px; border:none; background:none; cursor:pointer;">&times;</button>
+    <!-- Contenedor info publicación -->
+    <div id="publicationInfo" style="flex:1; overflow-y:auto; border-right: 1px solid #ddd; padding-right: 20px;">
+      <!-- Aquí se llenará la info de la publicación -->
+      <p>Cargando publicación...</p>
+    </div>
+
+    <!-- Contenedor comentarios -->
+    <div id="commentsContent" style="flex:1; overflow-y:auto; padding-left: 20px;">
+      <h3>Comentarios</h3>
+      <p>Cargando comentarios...</p>
+    </div>
+    </div>
+  </div>
+
     </main>
 </body>
 </html>
@@ -188,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let hasVisiblePublications = false;
         
         document.querySelectorAll('.publication').forEach(pub => {
-            const matchesTipo = !filters.tipo || pub.dataset.tipo === filters.tipo;
+            const matchesTipo = !filters.tipo || pub.dataset.tipo.toLowerCase() === filters.tipo.toLowerCase();
             const matchesEstado = !filters.estado || pub.dataset.activo === filters.estado;
             const matchesVisibilidad = !filters.visibilidad || pub.dataset.visibilidad === filters.visibilidad;
             const matchesGrupo = !filters.grupo || pub.dataset.grupo === filters.grupo;
@@ -280,6 +302,105 @@ function confirmToggleStatus(postId) {
         text: '{{ session('error') }}'
     });
 @endif
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('commentsModal');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const commentsContent = document.getElementById('commentsContent');
+
+  // Cerrar modal
+  closeModalBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+    commentsContent.innerHTML = '<p>Cargando...</p>';
+  });
+
+  // Cerrar modal al click fuera del contenido
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+      commentsContent.innerHTML = '<p>Cargando...</p>';
+    }
+  });
+
+  // Manejar clic en botones de comentarios
+  document.querySelectorAll('.comment-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const postId = btn.getAttribute('data-post-id');
+
+      // Mostrar modal
+      modal.style.display = 'flex';
+
+      // Hacer fetch a la ruta show en JSON
+      fetch(`/posts/${postId}`, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Error al cargar la publicación');
+        return res.json();
+      })
+      .then(data => {
+        // data debería incluir post, comentarios y likes (ver sugerencia abajo)
+        renderCommentsModal(data);
+      })
+      .catch(err => {
+        commentsContent.innerHTML = `<p style="color:red;">${err.message}</p>`;
+      });
+    });
+  });
+
+function renderCommentsModal(data) {
+  const post = data.post;
+  const comentarios = data.comentarios;
+
+  // Formatear datos
+  const fecha = post.fecha ? new Date(post.fecha).toLocaleString() : 'Fecha desconocida';
+  const estado = post.activo ? 'Activo' : 'Inactivo';
+  const tipo = post.tipo || 'No especificado';
+
+  // Contenedor publicación
+  let pubHtml = `
+    <h3>Información de la Publicación</h3>
+    <h4>${post.contenido}</h4>
+    <p><strong>Autor:</strong> ${post.user?.name || post.autorID || 'Anónimo'}</p>
+    <p><strong>Fecha:</strong> ${fecha}</p>
+    <p><strong>Estado:</strong> ${estado}</p>
+    <p><strong>Tipo:</strong> ${tipo}</p>
+  `;
+
+  if (post.imagenURL) {
+    pubHtml += `<img src="${post.imagenURL}" alt="Imagen publicación" style="max-width:100%; margin-top:10px; border-radius:6px;">`;
+  }
+
+  // Contenedor comentarios
+  let commentsHtml = '<h3>Comentarios</h3>';
+
+  if (comentarios.length === 0) {
+    commentsHtml += `<p>No hay comentarios.</p>`;
+  } else {
+    comentarios.forEach(c => {
+      const fechaC = c.fecha ? new Date(c.fecha).toLocaleString() : 'Fecha desconocida';
+      const autor = c.autorNombre || c.autorID || 'Anónimo';
+      const texto = c.texto || c.contenido || '';
+      commentsHtml += `
+        <div style="margin-bottom:10px; border-bottom:1px solid #ddd; padding-bottom:5px;">
+          <p><strong>${autor}:</strong> ${texto}</p>
+          <small style="color:#666;">${fechaC}</small>
+        </div>
+      `;
+    });
+  }
+
+  document.getElementById('publicationInfo').innerHTML = pubHtml;
+  document.getElementById('commentsContent').innerHTML = commentsHtml;
+}
+
+    });
+
+
 </script>
 
 <style>

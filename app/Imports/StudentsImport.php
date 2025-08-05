@@ -9,6 +9,7 @@ use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use MongoDB\BSON\UTCDateTime;
 
 class StudentsImport implements ToCollection, WithHeadingRow
 {
@@ -54,7 +55,7 @@ class StudentsImport implements ToCollection, WithHeadingRow
                     'grupoID' => $grupoModel->_id, // Usamos el _id del grupo encontrado
                     'password' => bcrypt(Str::lower($row['nombre']) . '123'),
                     'activo' => true,
-                    'fechaRegistro' => now(),
+'fechaRegistro' => new UTCDateTime(now()->toDateTimeImmutable()),
                     'updated_at' => now()
                 ]);
                 

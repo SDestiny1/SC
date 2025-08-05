@@ -28,4 +28,10 @@ class Subject extends Model
     {
         return $this->hasMany(User::class, 'materiaID', '_id');
     }
+
+    // En Subject.php
+public function docente()
+{
+    return $this->belongsTo(User::class, 'docenteID', '_id');
+}
 }

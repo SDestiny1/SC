@@ -44,14 +44,21 @@
                 <input type="text" name="search" placeholder="Buscar docentes por nombre o materia..." value="{{ request('search') }}">
             </form>
             <div class="action-buttons">
-                <a href="{{ route('teachers.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i>
-                    <span>Nuevo Docente</span>
-                </a>
-                <button class="btn btn-secondary">
-                    <i class="fas fa-file-export"></i>
-                    <span>Exportar Datos</span>
-                </button>
+<!-- Botón de Importar -->
+<button class="btn btn-secondary" id="importTeachersButton">
+    <i class="fas fa-file-import"></i>
+    <span>Importar Docentes</span>
+</button>
+
+                <!-- Oculto: input file para subir Excel -->
+<form id="importTeachersForm" action="{{ route('teachers.import') }}" method="POST" enctype="multipart/form-data" style="display:none;">
+    @csrf
+</form>
+
+<input type="file" id="teacherFileInput" accept=".xlsx,.xls,.csv" style="display:none;">
+
+
+                <!-- Botón de Filtros -->
                 <button class="btn btn-outline" id="toggleFilters">
                     <i class="fas fa-filter"></i>
                     <span>Filtros</span>
@@ -136,7 +143,9 @@
                         <div class="detail-content">
                             <div class="detail-label">Materia</div>
                             <div class="detail-value">
-                                {{ $teacher->materia->nombre ?? 'Sin materia asignada' }}
+                        @foreach ($teacher->materias() as $materia)
+                            <li>{{ $materia->nombre }}</li>
+                        @endforeach
                             </div>
                         </div>
                     </div>
@@ -172,10 +181,10 @@
                         </div>
                     </div>
                 </div>
-<div class="professor-actions">
-    <a href="{{ route('teachers.show', $teacher->_id) }}" class="action-btn">
-        <i class="fas fa-eye"></i> Ver
-    </a>                    
+                <div class="professor-actions">
+                    <a href="{{ route('teachers.show', $teacher->_id) }}" class="action-btn">
+                        <i class="fas fa-eye"></i> Ver
+                    </a>                    
     <a href="mailto:{{ $teacher->_id }}" class="action-btn">
         <i class="fas fa-envelope"></i> Contactar
     </a>
@@ -258,3 +267,107 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<script>
+document.getElementById('importTeachersButton').addEventListener('click', function() {
+    document.getElementById('teacherFileInput').click();
+});
+
+document.getElementById('teacherFileInput').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    Swal.fire({
+        title: 'Confirmar Importación',
+        html: `¿Desea importar el archivo <strong>${file.name}</strong>?<br><br>
+              <small>Verifique que el archivo tenga la estructura correcta antes de continuar.</small>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Importar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            importTeachers(file);
+        } else {
+            document.getElementById('teacherFileInput').value = '';
+        }
+    });
+});
+
+async function importTeachers(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    Swal.fire({
+        title: 'Procesando archivo',
+        html: 'Por favor espere mientras validamos y procesamos los datos...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        const response = await fetch('{{ route("teachers.import") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: formData
+        });
+
+        const result = await response.json();
+        Swal.close();
+
+        if (response.ok) {
+            // Lógica para mostrar diferentes alertas según resultado
+            if (result.imported === 0 && result.skipped > 0) {
+                const erroresLista = result.errors.map(e => `<li>${e}</li>`).join('');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Problemas en la importación',
+                    html: `
+                        <p>Se importaron <strong>0</strong> docentes correctamente.</p>
+                        <p><strong>${result.skipped} registros omitidos:</strong></p>
+                        <ul style="text-align:left;">${erroresLista}</ul>
+                    `
+                });
+            } else if (result.imported > 0 && result.skipped > 0) {
+                const erroresLista = result.errors.map(e => `<li>${e}</li>`).join('');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Importación parcial exitosa',
+                    html: `
+                        <p>Se importaron <strong>${result.imported}</strong> docentes correctamente.</p>
+                        <p><strong>${result.skipped} registros omitidos:</strong></p>
+                        <ul style="text-align:left;">${erroresLista}</ul>
+                    `
+                });
+            } else if (result.imported > 0) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Importación exitosa',
+                    text: `Se importaron ${result.imported} docentes correctamente.`
+                });
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Importación completada',
+                    text: 'No se encontraron datos para importar.'
+                });
+            }
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error en la importación',
+                html: result.message || 'Ocurrió un error al procesar el archivo.'
+            });
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Ocurrió un error al comunicarse con el servidor.'
+        });
+        console.error(error);
+    }
+}
+</script>
+

@@ -1358,6 +1358,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{{ route('becas.index') }}" class="nav-link">
+                    <i class="fas fa-award"></i>
+                    <span>Becas</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="#" class="nav-link">
                     <i class="fas fa-chart-bar"></i>
                     <span>Reportes</span>
