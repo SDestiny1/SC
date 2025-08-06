@@ -48,13 +48,14 @@ Route::put('/settings', [App\Http\Controllers\SettingsController::class, 'update
 
 Route::post('/comments', [CommentController::class, 'store'])->name('comments.store');
 
-Route::get('/calendario', [CalendarioController::class, 'index'])->name('calendario.index');
-Route::post('/calendario', [CalendarioController::class, 'store'])->name('calendario.store');
+Route::get('/calendario', [CalendarioController::class, 'index'])->name('calendario.index')->middleware('auth');
+Route::post('/calendario', [CalendarioController::class, 'store'])->name('calendario.store')->middleware('auth');
 Route::get('/plantilla-calendario', function () {
     return response()->download(storage_path('app/public/plantillas/plantilla_calendario.csv'));
-})->name('plantilla.calendario');
-Route::post('/calendario/importar', [CalendarioController::class, 'importar'])->name('calendario.importar');
-Route::delete('/calendario/{year}/{eventIndex}', [CalendarioController::class, 'destroy']);
+})->name('plantilla.calendario')->middleware('auth');
+Route::post('/calendario/importar', [CalendarioController::class, 'importar'])->name('calendario.importar')->middleware('auth');
+Route::delete('/calendario/{year}/{eventIndex}', [CalendarioController::class, 'destroy'])->middleware('auth');
+Route::patch('/calendario/{year}/{eventIndex}', [CalendarioController::class, 'update'])->middleware('auth');
 
 Route::prefix('noticias')->group(function () {
     Route::get('/', [NoticiaController::class, 'index'])->name('noticias.index');

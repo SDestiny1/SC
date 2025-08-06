@@ -88,6 +88,23 @@
             font-size: 1.1rem;
         }
         
+        /* Estilos para el botón de cerrar sesión */
+        .nav-item.logout-item {
+            margin-top: auto;
+        }
+        
+        .nav-link.logout-link {
+            color: #ff6b6b !important;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+        
+        .nav-link.logout-link:hover {
+            background-color: rgba(255, 107, 107, 0.1) !important;
+            border-left: 4px solid #ff6b6b !important;
+        }
+        
         /* Contenido principal */
         .main-content {
             flex: 1;
@@ -1363,21 +1380,65 @@
                     <span>Becas</span>
                 </a>
             </li>
+            <!-- Sección de reportes oculta temporalmente
             <li class="nav-item">
                 <a href="#" class="nav-link">
                     <i class="fas fa-chart-bar"></i>
                     <span>Reportes</span>
                 </a>
             </li>
+            -->
             <li class="nav-item">
                 <a href="#" class="nav-link">
                     <i class="fas fa-cog"></i>
                     <span>Configuración</span>
                 </a>
             </li>
+            
+            <!-- Separador -->
+            <li class="nav-item logout-item">
+                <a href="#" class="nav-link logout-link" onclick="confirmarCerrarSesion()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </li>
         </ul>
     </aside>
 
+    @yield('content')
+
+    <script>
+        function confirmarCerrarSesion() {
+            Swal.fire({
+                title: '¿Cerrar sesión?',
+                text: "¿Estás seguro de que quieres cerrar tu sesión?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#7A1625',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, cerrar sesión',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Crear un formulario temporal para enviar la petición POST
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ route("logout") }}';
+                    
+                    // Agregar el token CSRF
+                    const csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = '{{ csrf_token() }}';
+                    form.appendChild(csrfToken);
+                    
+                    // Agregar el formulario al DOM y enviarlo
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
 
 </body>
 </html>

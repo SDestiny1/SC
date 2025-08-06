@@ -16,7 +16,7 @@ public function index()
     $eventos = [];
     
     if ($calendario && isset($calendario->eventos)) {
-        foreach ($calendario->eventos as $evento) {
+        foreach ($calendario->eventos as $index => $evento) {
             // Saltar eventos no activos
             if (!($evento['activo'] ?? true)) continue;
 
@@ -32,12 +32,14 @@ public function index()
             // Solo agregar eventos con fechas válidas
             if ($start) {
                 $eventos[] = [
+                    'id' => $index, // Agregar el índice como ID
                     'title' => $evento['nombreEvento'] ?? 'Sin nombre',
                     'start' => $start,
                     'end' => $end,
                     'color' => $this->colorPorTipo($evento['tipoEvento'] ?? 'evento'),
                     'descripcion' => $evento['descripcion'] ?? '',
-                    'tipoEvento' => $evento['tipoEvento'] ?? 'evento', // ✅ Agregar esto
+                    'tipoEvento' => $evento['tipoEvento'] ?? 'evento',
+                    'indice' => $index, // Agregar el índice para referencia
                 ];
             }
         }
@@ -140,17 +142,76 @@ public function importar(Request $request)
         return back()->withErrors(['error' => 'Error al importar: '.$e->getMessage()]);
     }
 }
+
+public function update(Request $request, $year, $eventIndex)
+{
+    try {
+        $request->validate([
+            'nombre' => 'required|string|max:100',
+            'tipoEvento' => 'required|in:evento,periodo,inicio ciclo,evaluaciones,día feriado',
+            'fechaInicio' => 'required|date',
+            'fechaFin' => 'nullable|date|after_or_equal:fechaInicio',
+            'descripcion' => 'nullable|string'
+        ]);
+
+        $calendario = SchoolCalendar::where('_id', 'calendario_'.$year)->firstOrFail();
+        
+        if (!isset($calendario->eventos[$eventIndex])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Evento no encontrado'
+            ], 404);
+        }
+
+        // Obtener el array de eventos y modificarlo
+        $eventos = $calendario->eventos ?? [];
+        $eventos[$eventIndex] = [
+            'nombreEvento' => $request->nombre,
+            'tipoEvento' => $request->tipoEvento,
+            'descripcion' => $request->descripcion,
+            'fechaInicio' => new UTCDateTime(strtotime($request->fechaInicio) * 1000),
+            'fechaFin' => new UTCDateTime(strtotime($request->fechaFin ?: $request->fechaInicio) * 1000),
+            'activo' => true
+        ];
+
+        // Actualizar el calendario con el nuevo array
+        $calendario->update(['eventos' => $eventos]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Evento actualizado correctamente'
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error de validación: ' . implode(', ', array_flatten($e->errors()))
+        ], 422);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al actualizar: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
 public function destroy($year, $eventIndex)
 {
     try {
         $calendario = SchoolCalendar::where('_id', 'calendario_'.$year)->firstOrFail();
         
+        if (!isset($calendario->eventos[$eventIndex])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Evento no encontrado'
+            ], 404);
+        }
+        
         // Elimina el evento del array
-        $eventos = $calendario->eventos;
+        $eventos = $calendario->eventos ?? [];
         array_splice($eventos, $eventIndex, 1);
         
-        $calendario->eventos = $eventos;
-        $calendario->save();
+        // Actualizar el calendario con el nuevo array
+        $calendario->update(['eventos' => $eventos]);
 
         return response()->json([
             'success' => true,

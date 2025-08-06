@@ -101,9 +101,6 @@
 
                 <div class="noticia-content">
                     {{ Str::limit($noticia->contenido, 200) }}
-                    @if(strlen($noticia->contenido) > 200)
-                        <a href="#" class="read-more">Leer más...</a>
-                    @endif
                 </div>
             </div>
         @empty
@@ -381,18 +378,6 @@
 .noticia-content {
     color: #5a5c69;
     line-height: 1.5;
-}
-
-.read-more {
-    color: #4e73df;
-    text-decoration: none;
-    font-weight: 500;
-    display: inline-block;
-    margin-top: 5px;
-}
-
-.read-more:hover {
-    text-decoration: underline;
 }
 
 .no-results {

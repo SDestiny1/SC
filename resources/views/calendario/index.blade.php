@@ -225,24 +225,40 @@ eventClick: function(info) {
 
     let isEditable = false;
 
-    const contentHTML = () => `
-        <form id="editar-evento-form" style="text-align: center;">
-            <input type="text" id="nombre-evento" value="${evento.title}" ${!isEditable ? 'readonly' : ''} 
-                class="text-center w-full font-bold text-lg bg-transparent mb-2 border-none outline-none" />
+    const contentHTML = () => {
+        const isPeriodo = props.tipoEvento === 'periodo' || props.tipoEvento === 'evaluaciones';
+        const showPeriodFields = isPeriodo; // Mostrar campos de periodo siempre si es periodo
+        
+        return `
+            <form id="editar-evento-form" style="text-align: center;">
+                <input type="text" id="nombre-evento" value="${evento.title}" ${!isEditable ? 'readonly' : ''} 
+                    class="text-center w-full font-bold text-lg mb-2 ${isEditable ? 'border-2 border-orange-300 focus:border-orange-500' : 'border-none bg-transparent'} outline-none" 
+                    placeholder="Nombre del evento" />
 
-            <input type="text" id="tipo-evento" value="${props.tipoEvento || ''}" ${!isEditable ? 'readonly' : ''} 
-                class="text-center w-full text-base bg-transparent mb-2 border-none outline-none" placeholder="Tipo de evento" />
+                <div id="fecha-simple" style="display: ${showPeriodFields ? 'none' : 'block'};">
+                    <label style="font-size: 12px; color: #666;">Fecha del evento</label>
+                    <input type="date" id="fecha-inicio" value="${evento.startStr}" ${!isEditable ? 'readonly' : ''} 
+                        class="text-center w-full text-base bg-transparent mb-2 border-none outline-none" />
+                </div>
 
-            <input type="date" id="fecha-inicio" value="${evento.startStr}" ${!isEditable ? 'readonly' : ''} 
-                class="text-center w-full text-base bg-transparent mb-2 border-none outline-none" />
+                <div id="fecha-periodo" style="display: ${showPeriodFields ? 'block' : 'none'};">
+                    <div style="margin-bottom: 10px;">
+                        <label style="font-size: 12px; color: #666;">Fecha inicio</label>
+                        <input type="date" id="fecha-inicio-periodo" value="${evento.startStr}" ${!isEditable ? 'readonly' : ''} 
+                            class="text-center w-full text-base bg-transparent mb-2 border-none outline-none" />
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: #666;">Fecha fin</label>
+                        <input type="date" id="fecha-fin-periodo" value="${evento.endStr || evento.startStr}" ${!isEditable ? 'readonly' : ''} 
+                            class="text-center w-full text-base bg-transparent mb-2 border-none outline-none" />
+                    </div>
+                </div>
 
-            <input type="date" id="fecha-fin" value="${evento.endStr || evento.startStr}" ${!isEditable ? 'readonly' : ''} 
-                class="text-center w-full text-base bg-transparent mb-2 border-none outline-none" />
-
-            <textarea id="descripcion-evento" ${!isEditable ? 'readonly' : ''} placeholder="Descripción"
-                class="text-center w-full text-base bg-transparent resize-none border-none outline-none">${props.descripcion || ''}</textarea>
-        </form>
-    `;
+                <textarea id="descripcion-evento" ${!isEditable ? 'readonly' : ''} placeholder="Descripción"
+                    class="text-center w-full text-base bg-transparent resize-none border-none outline-none">${props.descripcion || ''}</textarea>
+            </form>
+        `;
+    };
 
     const showModal = (editable = false) => {
         isEditable = editable;
@@ -258,23 +274,89 @@ eventClick: function(info) {
             denyButtonColor: '#dc3545',
             didOpen: () => {
                 if (editable) {
-                    ['nombre-evento', 'tipo-evento', 'fecha-inicio', 'fecha-fin', 'descripcion-evento'].forEach(id => {
-                        document.getElementById(id).removeAttribute('readonly');
-                    });
+                    // Habilitar campos editables
+                    document.getElementById('nombre-evento').removeAttribute('readonly');
+                    document.getElementById('descripcion-evento').removeAttribute('readonly');
+                    
+                    // Habilitar campos de fecha según el tipo
+                    const fechaInicio = document.getElementById('fecha-inicio');
+                    const fechaInicioPeriodo = document.getElementById('fecha-inicio-periodo');
+                    const fechaFinPeriodo = document.getElementById('fecha-fin-periodo');
+                    
+                    if (fechaInicio) fechaInicio.removeAttribute('readonly');
+                    if (fechaInicioPeriodo) fechaInicioPeriodo.removeAttribute('readonly');
+                    if (fechaFinPeriodo) fechaFinPeriodo.removeAttribute('readonly');
                 }
             },
             preConfirm: () => {
                 if (editable) {
+                    const tipoEvento = props.tipoEvento || 'evento';
+                    const isPeriodo = tipoEvento === 'periodo' || tipoEvento === 'evaluaciones';
+                    
+                    let fechaInicio, fechaFin;
+                    
+                    if (isPeriodo) {
+                        fechaInicio = document.getElementById('fecha-inicio-periodo').value;
+                        fechaFin = document.getElementById('fecha-fin-periodo').value;
+                    } else {
+                        fechaInicio = document.getElementById('fecha-inicio').value;
+                        fechaFin = fechaInicio; // Para eventos simples, fecha fin = fecha inicio
+                    }
+                    
                     const datosEditados = {
-                        id: evento.id,
                         nombre: document.getElementById('nombre-evento').value,
-                        tipoEvento: document.getElementById('tipo-evento').value,
-                        fechaInicio: document.getElementById('fecha-inicio').value,
-                        fechaFin: document.getElementById('fecha-fin').value,
+                        tipoEvento: tipoEvento,
+                        fechaInicio: fechaInicio,
+                        fechaFin: fechaFin,
                         descripcion: document.getElementById('descripcion-evento').value
                     };
-                    console.log("Editar evento:", datosEditados);
-                    Swal.fire('Actualizado', 'El evento ha sido editado (simulado).', 'success');
+                    
+                    const eventIndex = evento.extendedProps.indice;
+                    const year = '2025A';
+                    
+                    return fetch(`/calendario/${year}/${eventIndex}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'X-CSRF-TOKEN': window.CSRF_TOKEN,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(datosEditados)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errorData => {
+                                throw new Error(errorData.message || 'Error en la respuesta');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('¡Actualizado!', data.message, 'success');
+                            // Actualizar el evento en el calendario
+                            evento.setProp('title', datosEditados.nombre);
+                            evento.setExtendedProp('tipoEvento', datosEditados.tipoEvento);
+                            evento.setExtendedProp('descripcion', datosEditados.descripcion);
+                            
+                            // Actualizar fechas
+                            if (datosEditados.fechaInicio !== datosEditados.fechaFin) {
+                                evento.setStart(datosEditados.fechaInicio);
+                                evento.setEnd(datosEditados.fechaFin);
+                            } else {
+                                evento.setStart(datosEditados.fechaInicio);
+                                evento.setEnd(null);
+                            }
+                            
+                            return true;
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire('Error', error.message, 'error');
+                        return false;
+                    });
                 } else {
                     showModal(true);
                 }
@@ -345,12 +427,169 @@ eventClick: function(info) {
 </script>
 
 <style>
+    /* Estilos para el modal de eventos */
+    .swal2-popup {
+        border-radius: 12px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+
+    .swal2-title {
+        color: #2c3e50 !important;
+        font-weight: 600 !important;
+        font-size: 1.5rem !important;
+    }
+
+    .swal2-html-container {
+        padding: 1rem 0 !important;
+    }
+
+    /* Estilos para los campos de entrada */
     .swal2-html-container input, 
     .swal2-html-container textarea {
-        border: none !important;
+        border: 2px solid #e9ecef !important;
+        border-radius: 8px !important;
+        padding: 12px 16px !important;
+        font-size: 14px !important;
+        width: 100% !important;
+        margin-bottom: 12px !important;
+        transition: all 0.3s ease !important;
+        background: #ffffff !important;
+        text-align: center !important;
+        color: #2c3e50 !important;
+    }
+
+    .swal2-html-container input:focus, 
+    .swal2-html-container textarea:focus {
+        border-color: #ff6b35 !important;
+        box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1) !important;
         outline: none !important;
-        text-align: center;
-        background: transparent;
+    }
+
+    .swal2-html-container input[readonly], 
+    .swal2-html-container textarea[readonly] {
+        background-color: #f8f9fa !important;
+        color: #6c757d !important;
+        cursor: not-allowed !important;
+        border-color: #dee2e6 !important;
+    }
+
+    /* Estilos para las etiquetas */
+    .swal2-html-container label {
+        display: block !important;
+        font-size: 12px !important;
+        color: #6c757d !important;
+        font-weight: 600 !important;
+        margin-bottom: 6px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* Estilos para el nombre del evento */
+    .swal2-html-container input[id="nombre-evento"] {
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: #2c3e50 !important;
+        padding: 12px 16px !important;
+        margin-bottom: 16px !important;
+        border-radius: 8px !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .swal2-html-container input[id="nombre-evento"][readonly] {
+        border: none !important;
+        background: transparent !important;
+        padding: 8px 0 !important;
+    }
+
+    .swal2-html-container input[id="nombre-evento"]:not([readonly]) {
+        border: 2px solid #ff6b35 !important;
+        background: #ffffff !important;
+    }
+
+    .swal2-html-container input[id="nombre-evento"]:not([readonly]):focus {
+        border-color: #e55a2b !important;
+        box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1) !important;
+    }
+
+    /* Estilos para la descripción */
+    .swal2-html-container textarea {
+        min-height: 80px !important;
+        resize: vertical !important;
+        font-family: inherit !important;
+    }
+
+    /* Estilos para los campos de fecha */
+    .swal2-html-container input[type="date"] {
+        text-align: center !important;
+        font-weight: 500 !important;
+    }
+
+    /* Estilos para los botones */
+    .swal2-confirm {
+        background: #ff6b35 !important;
+        border-color: #ff6b35 !important;
+        border-radius: 8px !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .swal2-confirm:hover {
+        background: #e55a2b !important;
+        border-color: #e55a2b !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .swal2-cancel {
+        background: #6c757d !important;
+        border-color: #6c757d !important;
+        border-radius: 8px !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .swal2-cancel:hover {
+        background: #5a6268 !important;
+        border-color: #545b62 !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .swal2-deny {
+        background: #dc3545 !important;
+        border-color: #dc3545 !important;
+        border-radius: 8px !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .swal2-deny:hover {
+        background: #c82333 !important;
+        border-color: #bd2130 !important;
+        transform: translateY(-1px) !important;
+    }
+
+    /* Estilos para los contenedores de fecha */
+    #fecha-simple, #fecha-periodo {
+        margin-bottom: 16px !important;
+    }
+
+    #fecha-periodo div {
+        margin-bottom: 8px !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .swal2-html-container input, 
+        .swal2-html-container textarea {
+            padding: 10px 12px !important;
+            font-size: 13px !important;
+        }
+        
+        .swal2-title {
+            font-size: 1.3rem !important;
+        }
     }
 </style>
 

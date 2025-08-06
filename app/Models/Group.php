@@ -12,7 +12,7 @@ class Group extends Model
     
     protected $fillable = [
         'nombre',
-        'carrera',
+        'carreraID',
         'semestre',
         'activo'
     ];
@@ -22,7 +22,8 @@ class Group extends Model
     {
         return $this->hasMany(User::class, 'grupoID', '_id');
     }
-        public function carrera()
+    
+    public function carrera()
     {
         return $this->belongsTo(Career::class, 'carreraID', '_id');
     }

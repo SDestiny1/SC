@@ -42,8 +42,7 @@
             <label for="fechaPublicacion">Fecha de Publicación *</label>
             <input type="datetime-local" name="fechaPublicacion" id="fechaPublicacion" 
                    value="{{ old('fechaPublicacion', $noticia->fechaPublicacion->format('Y-m-d\TH:i')) }}" 
-                   class="@error('fechaPublicacion') is-invalid @enderror"
-                   min="{{ now()->format('Y-m-d\TH:i') }}" required>
+                   class="@error('fechaPublicacion') is-invalid @enderror" required>
             @error('fechaPublicacion')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -53,11 +52,13 @@
             <label for="imagen">Imagen</label>
             @if($noticia->imagenURL)
                 <div class="current-image">
-                    <img src="{{ $noticia->imagenURL }}" alt="Imagen actual" style="max-width: 200px; display: block; margin-bottom: 10px;">
-                    <label>
-                        <input type="checkbox" name="remove_image" value="1"> 
-                        Eliminar imagen actual
-                    </label>
+                    <img src="{{ $noticia->imagenURL }}" alt="Imagen actual" class="current-image-preview">
+                    <div class="remove-image-option">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="remove_image" value="1"> 
+                            <span>Eliminar imagen actual</span>
+                        </label>
+                    </div>
                 </div>
             @endif
             <input type="file" name="imagen" id="imagen" accept="image/*" 
@@ -67,7 +68,7 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
             <small class="form-text text-muted">Dejar en blanco para mantener la imagen actual</small>
-            <div class="image-preview" style="margin-top: 10px;">
+            <div class="image-preview">
                 <img id="preview" src="#" alt="Vista previa" style="max-width: 100%; display: none;">
             </div>
         </div>
@@ -81,8 +82,10 @@
         </div>
 
         <div class="form-group">
-            <button type="submit" class="btn btn-primary">Actualizar Noticia</button>
-            <a href="{{ route('noticias.index') }}" class="btn btn-secondary">Cancelar</a>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Actualizar Noticia</button>
+                <a href="{{ route('noticias.index') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
         </div>
     </form>
 </main>
@@ -155,19 +158,101 @@ function previewImage(event) {
 }
 
 .btn {
-    padding: 8px 15px;
+    padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
 }
 
-.btn-success {
-    background-color: #28a745;
+.btn-primary {
+    background-color: #7A1625;
     color: white;
-    border: none;
+    border: 1px solid #7A1625;
+}
+
+.btn-primary:hover {
+    background-color: #5a1120;
+    border-color: #5a1120;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(122, 22, 37, 0.3);
 }
 
 .btn-secondary {
     background-color: #6c757d;
     color: white;
-    border: none;
-}</style>
+    border: 1px solid #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+    border-color: #545b62;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.button-group .btn {
+    margin-right: 0;
+    flex: 0 0 auto;
+}
+
+.current-image {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.current-image-preview {
+    max-width: 200px;
+    max-height: 150px;
+    display: block;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.remove-image-option {
+    margin-top: 10px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    cursor: pointer;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.checkbox-label span {
+    user-select: none;
+}
+
+.image-preview {
+    margin-top: 15px;
+}
+
+.image-preview img {
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>

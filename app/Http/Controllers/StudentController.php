@@ -15,7 +15,12 @@ use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
 {
-   public function index(Request $request)
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    
+    public function index(Request $request)
 {
     $query = User::where('rol', 'alumno')
                 ->with(['grupo' => function($q) {
@@ -70,38 +75,90 @@ class StudentController extends Controller
 
     public function create()
     {
-        $groups = Group::all();
-        return view('students.create', compact('groups'));
+        $groups = Group::with('carrera')->where('activo', true)->get();
+        $carreras = Career::where('activo', true)->orderBy('nombreCarrera')->get();
+        return view('students.create', compact('groups', 'carreras'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:100',
-            'apellidoPaterno' => 'required|string|max:100',
-            'apellidoMaterno' => 'required|string|max:100',
+            'nombre' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'apellidoPaterno' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
+            'apellidoMaterno' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/',
             '_id' => 'required|email|unique:users,_id',
-            'password' => 'required|string|min:8',
-            'fechaNacimiento' => 'required|date',
+            'password' => 'required|string|min:8|confirmed',
+            'fechaNacimiento' => 'required|date|before:today|after:1900-01-01',
             'grupoID' => 'required|exists:groups,_id',
+            'genero' => 'nullable|in:masculino,femenino,otro',
+            'telefono' => 'nullable|string|max:20',
+            'matricula' => 'nullable|string|max:20|unique:users,matricula',
+        ], [
+            'nombre.regex' => 'El nombre solo puede contener letras y espacios.',
+            'apellidoPaterno.regex' => 'El apellido paterno solo puede contener letras y espacios.',
+            'apellidoMaterno.regex' => 'El apellido materno solo puede contener letras y espacios.',
+            'fechaNacimiento.before' => 'La fecha de nacimiento debe ser anterior a hoy.',
+            'fechaNacimiento.after' => 'La fecha de nacimiento debe ser posterior a 1900.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
-        $user = new User([
-            '_id' => $request->_id,
-            'nombre' => $request->nombre,
-            'apellidoPaterno' => $request->apellidoPaterno,
-            'apellidoMaterno' => $request->apellidoMaterno,
-            'password' => bcrypt($request->password),
-            'fechaNacimiento' => $request->fechaNacimiento,
-            'rol' => 'alumno',
-            'grupoID' => $request->grupoID,
-            'activo' => true,
-            'fechaRegistro' => now(),
-        ]);
+        // Validar edad (entre 15 y 100 años)
+        $fechaNacimiento = \Carbon\Carbon::parse($request->fechaNacimiento);
+        $edad = $fechaNacimiento->age;
+        
+        if ($edad < 15 || $edad > 100) {
+            return back()->withErrors(['fechaNacimiento' => 'La edad debe estar entre 15 y 100 años.'])->withInput();
+        }
 
-        $user->save();
+        // Generar matrícula automáticamente si no se proporciona
+        $matricula = $request->matricula;
+        if (empty($matricula)) {
+            $year = date('Y');
+            $lastStudent = User::where('matricula', 'like', $year . '%')
+                              ->orderBy('matricula', 'desc')
+                              ->first();
+            
+            if ($lastStudent) {
+                $lastNumber = intval(substr($lastStudent->matricula, -4));
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+            
+            $matricula = $year . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        }
 
-        return redirect()->route('students.index')->with('success', 'Alumno registrado exitosamente.');
+        // Verificar que la matrícula sea única
+        if (User::where('matricula', $matricula)->exists()) {
+            return back()->withErrors(['matricula' => 'La matrícula ya existe en el sistema.'])->withInput();
+        }
+
+        try {
+            $user = new User([
+                '_id' => $request->_id,
+                'nombre' => ucwords(strtolower($request->nombre)),
+                'apellidoPaterno' => ucwords(strtolower($request->apellidoPaterno)),
+                'apellidoMaterno' => ucwords(strtolower($request->apellidoMaterno)),
+                'password' => bcrypt($request->password),
+                'fechaNacimiento' => $fechaNacimiento,
+                'genero' => $request->genero,
+                'telefono' => $request->telefono,
+                'matricula' => $matricula,
+                'rol' => 'alumno',
+                'grupoID' => $request->grupoID,
+                'activo' => true,
+                'fechaRegistro' => now(),
+            ]);
+
+            $user->save();
+
+            return redirect()->route('students.index')
+                           ->with('success', 'Alumno registrado exitosamente. Matrícula: ' . $matricula);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al registrar alumno: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Error al registrar el alumno. Por favor, intente nuevamente.'])->withInput();
+        }
     }
 
 public function destroy($id)

@@ -17,10 +17,10 @@
             </div>
         </header>
 
-                <!-- Widgets principales -->
+        <!-- Widgets principales -->
         <div class="dashboard-widgets">
             <!-- Publicaciones Alumnos -->
-            <div class="widget">
+            <div class="widget clickable-widget" onclick="window.location.href='{{ route('posts.index') }}'">
                 <div class="widget-header">
                     <h3 class="widget-title">Publicaciones por Alumnos</h3>
                     <div class="widget-icon">
@@ -35,7 +35,7 @@
             </div>
 
             <!-- Publicaciones Maestros -->
-            <div class="widget">
+            <div class="widget clickable-widget" onclick="window.location.href='{{ route('posts.index') }}'">
                 <div class="widget-header">
                     <h3 class="widget-title">Publicaciones por Maestros</h3>
                     <div class="widget-icon">
@@ -50,7 +50,7 @@
             </div>
 
             <!-- Noticias Activas -->
-            <div class="widget">
+            <div class="widget clickable-widget" onclick="window.location.href='{{ route('noticias.index') }}'">
                 <div class="widget-header">
                     <h3 class="widget-title">Noticias Activas</h3>
                     <div class="widget-icon">
@@ -83,7 +83,7 @@
                     </thead>
                     <tbody>
                         @forelse($recentActivities as $activity)
-                        <tr>
+                        <tr class="clickable-row" onclick="handleActivityClick('{{ $activity['type'] }}', '{{ $activity['content'] }}')">
                             <td>{{ $activity['user'] }}</td>
                             <td>
                                 @if($activity['type'] == 'noticia')
@@ -111,7 +111,7 @@
                     Notificaciones
                 </h2>
                 <ul class="notification-list">
-                    <li class="notification-item">
+                    <li class="notification-item clickable-notification" onclick="window.location.href='{{ route('students.index') }}'">
                         <div class="notification-icon">
                             <i class="fas fa-exclamation"></i>
                         </div>
@@ -121,7 +121,7 @@
                             <span class="notification-time">Hace 2 horas</span>
                         </div>
                     </li>
-                    <li class="notification-item">
+                    <li class="notification-item clickable-notification" onclick="window.location.href='{{ route('calendario.index') }}'">
                         <div class="notification-icon">
                             <i class="fas fa-calendar-alt"></i>
                         </div>
@@ -131,7 +131,7 @@
                             <span class="notification-time">Ayer</span>
                         </div>
                     </li>
-                    <li class="notification-item">
+                    <li class="notification-item clickable-notification" onclick="window.location.href='{{ route('dashboard') }}'">
                         <div class="notification-icon">
                             <i class="fas fa-chart-line"></i>
                         </div>
@@ -148,25 +148,25 @@
                     Acciones Rápidas
                 </h2>
                 <div class="quick-actions">
-                    <div class="action-card">
+                    <div class="action-card clickable-action" onclick="window.location.href='{{ route('students.create') }}'">
                         <div class="action-icon">
                             <i class="fas fa-user-plus"></i>
                         </div>
                         <div class="action-title">Nuevo Usuario</div>
                     </div>
-                    <div class="action-card">
+                    <div class="action-card clickable-action" onclick="exportData()">
                         <div class="action-icon">
                             <i class="fas fa-file-export"></i>
                         </div>
                         <div class="action-title">Exportar Datos</div>
                     </div>
-                    <div class="action-card">
+                    <div class="action-card clickable-action" onclick="window.location.href='{{ route('noticias.create') }}'">
                         <div class="action-icon">
                             <i class="fas fa-bullhorn"></i>
                         </div>
                         <div class="action-title">Nuevo Anuncio</div>
                     </div>
-                    <div class="action-card">
+                    <div class="action-card clickable-action" onclick="window.location.href='{{ route('dashboard') }}'">
                         <div class="action-icon">
                             <i class="fas fa-chart-pie"></i>
                         </div>
@@ -187,5 +187,61 @@
             </div>
         </div>
     </main>
+
+    <style>
+        .clickable-widget {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .clickable-widget:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .clickable-row:hover {
+            background-color: rgba(122, 22, 37, 0.1);
+        }
+        
+        .clickable-notification {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .clickable-notification:hover {
+            transform: translateX(5px);
+            background-color: rgba(122, 22, 37, 0.05);
+        }
+        
+        .clickable-action {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .clickable-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+    </style>
+
+    <script>
+        function handleActivityClick(type, content) {
+            if (type === 'noticia') {
+                window.location.href = '{{ route("noticias.index") }}';
+            } else if (type === 'publicacion') {
+                window.location.href = '{{ route("posts.index") }}';
+            }
+        }
+        
+        function exportData() {
+            // Función para exportar datos (puedes implementar la lógica específica)
+            alert('Función de exportación en desarrollo');
+        }
+    </script>
 </body>
 </html>

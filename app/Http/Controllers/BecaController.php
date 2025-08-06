@@ -23,31 +23,23 @@ class BecaController extends Controller
         });
     }
     
-    // Filtro por tipo de beca
-    if ($request->has('tipo_beca')) {
-        if ($request->tipo_beca == 'con_beneficio') {
-            $query->where('monto', '>', 0);
-        } elseif ($request->tipo_beca == 'sin_beneficio') {
-            $query->where('monto', '<=', 0)->orWhereNull('monto');
-        }
+    // Filtro por tipo
+    if ($request->has('tipo') && !empty($request->tipo)) {
+        $query->where('tipo', $request->tipo);
     }
     
-    // Filtro por promedio
-    if ($request->has('promedio')) {
-        if ($request->promedio == 'con_promedio') {
-            $query->whereNotNull('promedioMinimo')->where('promedioMinimo', '>', 0);
-        } elseif ($request->promedio == 'sin_promedio') {
-            $query->whereNull('promedioMinimo')->orWhere('promedioMinimo', '<=', 0);
-        }
-    }
+
     
     // Filtro por estado
-    if ($request->has('estado')) {
-        $now = now();
+    if ($request->has('estado') && !empty($request->estado)) {
+        $now = Carbon::now();
+        
         if ($request->estado == 'activas') {
+            // Becas activas: fecha actual está entre fechaInicio y fechaFin
             $query->where('fechaInicio', '<=', $now)
                   ->where('fechaFin', '>=', $now);
         } elseif ($request->estado == 'proximas') {
+            // Becas próximas: fechaInicio es posterior a la fecha actual
             $query->where('fechaInicio', '>', $now);
         }
     }
@@ -55,6 +47,11 @@ class BecaController extends Controller
     $becas = $query->where('activo', true)
                 ->orderBy('fechaPublicacion', 'desc')
                 ->get();
+    
+    // Si es una petición AJAX, devolver solo el HTML de las tarjetas
+    if ($request->ajax()) {
+        return view('becas.partials.becas-cards', compact('becas'))->render();
+    }
     
     return view('becas.index', compact('becas'));
 }
@@ -72,6 +69,11 @@ class BecaController extends Controller
 
     public function store(Request $request)
     {
+        // Verificar que el usuario esté autenticado
+        if (!Auth::check()) {
+            return redirect()->route('login')->with('error', 'Debes iniciar sesión para crear becas/programas.');
+        }
+
         $validated = $request->validate([
             'titulo' => 'required|string|max:255',
             'descripcion' => 'required|string',
@@ -79,26 +81,81 @@ class BecaController extends Controller
             'requisitos.*' => 'string',
             'documentos' => 'required|array|min:1',
             'documentos.*' => 'string',
-            'promedioMinimo' => 'nullable|numeric|min:0|max:10',
-            'sinReprobadas' => 'boolean',
             'condicionEspecial' => 'nullable|string',
             'fechaInicio' => 'required|date',
             'fechaFin' => 'required|date|after:fechaInicio',
-            'monto' => 'required|numeric|min:0',
             'institucion' => 'required|string',
-            'url' => 'nullable|url',
-            'tipo' => 'required|in:beca,convocatoria,noticia'
+            'url' => 'required|url',
+            'tipo' => 'required|in:programa,beca'
         ]);
 
-        
+        // Campos específicos según el tipo
+        if ($request->tipo === 'beca') {
+            $request->validate([
+                'monto' => 'required|numeric|min:0',
+            ]);
+        } else {
+            // Para programas, no se requiere monto
+            // Los programas usan los mismos campos que las becas, solo sin monto
+        }
+
         $beca = new Beca();
-        $beca->fill($validated);
+        
+        // Asignar campos básicos
+        $beca->titulo = $validated['titulo'];
+        $beca->descripcion = $validated['descripcion'];
+        
+        // Asegurar que requisitos y documentos sean arrays
+        $requisitos = is_array($validated['requisitos']) ? $validated['requisitos'] : [];
+        $documentos = is_array($validated['documentos']) ? $validated['documentos'] : [];
+        
+        // Filtrar elementos vacíos
+        $requisitos = array_filter($requisitos, function($item) {
+            return !empty(trim($item));
+        });
+        $documentos = array_filter($documentos, function($item) {
+            return !empty(trim($item));
+        });
+        
+        $beca->requisitos = array_values($requisitos); // Reindexar array
+        $beca->documentos = array_values($documentos); // Reindexar array
+        
+        $beca->condicionEspecial = $validated['condicionEspecial'];
+        $beca->fechaInicio = $validated['fechaInicio'];
+        $beca->fechaFin = $validated['fechaFin'];
+        $beca->institucion = $validated['institucion'];
+        $beca->url = $validated['url'];
+        $beca->tipo = $validated['tipo'];
+        
+        // Campos específicos según el tipo
+        if ($request->tipo === 'beca') {
+            $beca->monto = $request->monto;
+        } else {
+            // Para programas
+            $beca->monto = null; // Los programas no tienen monto
+        }
+        
         $beca->activo = true;
-        $beca->autorID = Auth::user()->email;
+        
+        // Asegurar que se guarde el autorID correctamente
+        $user = Auth::user();
+        $beca->autorID = $user ? $user->email : 'admin@default.com';
+        
         $beca->fechaPublicacion = Carbon::now();
         
         $beca->save();
 
-        return redirect()->route('becas.index')->with('success', 'Beca/Noticia creada exitosamente!');
+        // Debug: Verificar que los arrays se guardaron correctamente
+        \Log::info('Beca creada:', [
+            'id' => $beca->_id,
+            'autorID' => $beca->autorID,
+            'user_email' => $user ? $user->email : 'no_user',
+            'requisitos' => $beca->requisitos,
+            'documentos' => $beca->documentos,
+            'requisitos_type' => gettype($beca->requisitos),
+            'documentos_type' => gettype($beca->documentos)
+        ]);
+
+        return redirect()->route('becas.index')->with('success', ucfirst($request->tipo) . ' creado exitosamente!');
     }
 }

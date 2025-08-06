@@ -23,7 +23,11 @@ class User extends Eloquent implements AuthenticatableContract
         'password',
         'activo',
         'fechaRegistro',
-        'fechaNacimiento'
+        'fechaNacimiento',
+        'genero',
+        'telefono',
+        'matricula',
+        'fotoPerfil'
     ];
 
     protected $hidden = ['password'];

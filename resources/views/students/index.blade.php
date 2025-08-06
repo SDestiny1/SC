@@ -5,6 +5,20 @@
 @section('content')
     <!-- Contenido principal -->
     <main class="main-content">
+        @if(session('success'))
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                {{ session('success') }}
+            </div>
+        @endif
+        
+        @if(session('error'))
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ session('error') }}
+            </div>
+        @endif
+        
         <header class="header">
             <h1>Gestión de Alumnos</h1>
             <div class="user-info">
@@ -27,12 +41,16 @@
                        value="{{ request('search') }}">
             </form>
             <div class="action-buttons">
-            <!-- Reemplazar el botón actual con este: -->
-            <button class="btn btn-secondary" id="importButton">
-                <i class="fas fa-file-import"></i>
-                <span>Importar</span>
-            </button>
-            <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display: none;">
+                <!-- <a href="{{ route('students.create') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Registrar Alumno</span>
+                </a> -->
+                <!-- Reemplazar el botón actual con este: -->
+                <button class="btn btn-secondary" id="importButton">
+                    <i class="fas fa-file-import"></i>
+                    <span>Importar</span>
+                </button>
+                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display: none;">
                 <button class="btn btn-outline" id="toggleFilters">
                     <i class="fas fa-filter"></i>
                     <span>Filtros</span>
@@ -171,6 +189,32 @@
 <style>
     .action-icon i {
     color: white;
+}
+
+.alert {
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert-success {
+    background-color: #d1fae5;
+    border-color: #10b981;
+    color: #065f46;
+}
+
+.alert-danger {
+    background-color: #fee2e2;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+.alert i {
+    font-size: 1.1rem;
 }
 
     </style>

@@ -58,14 +58,16 @@
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
             <small class="form-text text-muted">Formatos: JPEG, PNG, GIF. Máx. 2MB</small>
-            <div class="image-preview" style="margin-top: 10px;">
+            <div class="image-preview">
                 <img id="preview" src="#" alt="Vista previa" style="max-width: 100%; display: none;">
             </div>
         </div>
 
         <div class="form-group">
-            <button type="submit" class="btn btn-success">Guardar Noticia</button>
-            <a href="{{ route('noticias.index') }}" class="btn btn-secondary">Cancelar</a>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Guardar Noticia</button>
+                <a href="{{ route('noticias.index') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
         </div>
     </form>
 </main>
@@ -138,20 +140,60 @@ function previewImage(event) {
 }
 
 .btn {
-    padding: 8px 15px;
+    padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
 }
 
-.btn-success {
-    background-color: #28a745;
+.btn-primary {
+    background-color: #7A1625;
     color: white;
-    border: none;
+    border: 1px solid #7A1625;
+}
+
+.btn-primary:hover {
+    background-color: #5a1120;
+    border-color: #5a1120;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(122, 22, 37, 0.3);
 }
 
 .btn-secondary {
     background-color: #6c757d;
     color: white;
-    border: none;
+    border: 1px solid #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+    border-color: #545b62;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.button-group .btn {
+    margin-right: 0;
+    flex: 0 0 auto;
+}
+
+.image-preview {
+    margin-top: 15px;
+}
+
+.image-preview img {
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 </style>

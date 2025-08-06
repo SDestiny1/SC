@@ -5,7 +5,7 @@
 @section('content')
 <main class="main-content">
     <header class="header">
-        <h1><i class="fas fa-award"></i> Becas Disponibles</h1>
+        <h1><i class="fas fa-award"></i> Becas y Programas Disponibles</h1>
         <div class="user-info">
             <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Usuario">
             <span>
@@ -24,34 +24,27 @@
             <!-- Campo de búsqueda principal -->
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" name="search" placeholder="Buscar becas por título, institución o descripción..." 
+                <input type="text" name="search" id="search-input" placeholder="Buscar becas y programas por título, institución o descripción..." 
                        value="{{ request('search') }}">
-                <button type="submit" class="search-button">Buscar</button>
+                <div class="search-loading" id="search-loading" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
             </div>
             
             <!-- Filtros organizados horizontalmente -->
             <div class="filters-row">
                 <div class="filter-item">
-                    <label>Tipo de beca:</label>
-                    <select name="tipo_beca">
+                    <label>Tipo:</label>
+                    <select name="tipo" id="tipo-filter">
                         <option value="">Todos</option>
-                        <option value="con_beneficio" {{ request('tipo_beca') == 'con_beneficio' ? 'selected' : '' }}>Con beneficio económico</option>
-                        <option value="sin_beneficio" {{ request('tipo_beca') == 'sin_beneficio' ? 'selected' : '' }}>Sin beneficio económico</option>
-                    </select>
-                </div>
-                
-                <div class="filter-item">
-                    <label>Promedio:</label>
-                    <select name="promedio">
-                        <option value="">Todos</option>
-                        <option value="con_promedio" {{ request('promedio') == 'con_promedio' ? 'selected' : '' }}>Requiere promedio</option>
-                        <option value="sin_promedio" {{ request('promedio') == 'sin_promedio' ? 'selected' : '' }}>No requiere</option>
+                        <option value="beca" {{ request('tipo') == 'beca' ? 'selected' : '' }}>Beca</option>
+                        <option value="programa" {{ request('tipo') == 'programa' ? 'selected' : '' }}>Programa</option>
                     </select>
                 </div>
                 
                 <div class="filter-item">
                     <label>Estado:</label>
-                    <select name="estado">
+                    <select name="estado" id="estado-filter">
                         <option value="">Todos</option>
                         <option value="activas" {{ request('estado') == 'activas' ? 'selected' : '' }}>Activas</option>
                         <option value="proximas" {{ request('estado') == 'proximas' ? 'selected' : '' }}>Próximas</option>
@@ -59,12 +52,9 @@
                 </div>
                 
                 <div class="filter-actions">
-                    <button type="submit" class="filter-button">
-                        <i class="fas fa-filter"></i> Filtrar
-                    </button>
-                    <a href="{{ route('becas.index') }}" class="clear-button">
+                    <button type="button" class="clear-button" id="clear-filters">
                         <i class="fas fa-times"></i> Limpiar
-                    </a>
+                    </button>
                 </div>
             </div>
         </form>
@@ -72,11 +62,11 @@
 
     <div class="action-section">
         <a href="{{ route('becas.create') }}" class="btn btn-create">
-            <i class="fas fa-plus"></i> Crear nueva beca
+            <i class="fas fa-plus"></i> Crear nueva beca/programa
         </a>
     </div>
 
-    <div class="becas-container">
+    <div class="becas-container" id="becas-container">
         @foreach($becas as $beca)
         <div class="beca-card">
             <div class="beca-header">
@@ -89,16 +79,22 @@
                 
                 <div class="beca-details">
                     <div class="detail-item">
-                        <i class="fas fa-money-bill-wave"></i>
-                        <span>{{ isset($beca->monto) ? '$'.number_format($beca->monto, 2).' MXN' : 'Monto no especificado' }}</span>
+                        <i class="fas fa-tag"></i>
+                        <span>Tipo: {{ ucfirst($beca->tipo) }}</span>
                     </div>
                     <div class="detail-item">
                         <i class="fas fa-calendar-day"></i>
                         <span>Del {{ \Carbon\Carbon::parse($beca->fechaInicio)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($beca->fechaFin)->format('d/m/Y') }}</span>
                     </div>
+                    @if($beca->tipo === 'beca' && isset($beca->monto))
                     <div class="detail-item">
-                        <i class="fas fa-star"></i>
-                        <span>Promedio mínimo: {{ $beca->promedioMinimo ?? 'N/A' }}</span>
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>${{ number_format($beca->monto, 2) }} MXN</span>
+                    </div>
+                    @endif
+                    <div class="detail-item">
+                        <i class="fas fa-user"></i>
+                        <span>Autor: {{ $beca->autorID }}</span>
                     </div>
                 </div>
                 
@@ -106,15 +102,30 @@
                     <a href="{{ route('becas.show', $beca->_id) }}" class="btn btn-primary">
                         Ver detalles
                     </a>
-                    @if($beca->url)
                     <a href="{{ $beca->url }}" target="_blank" class="btn btn-secondary">
-                        Sitio oficial
+                        <i class="fas fa-external-link-alt"></i> Sitio oficial
                     </a>
-                    @endif
                 </div>
             </div>
         </div>
         @endforeach
+    </div>
+    
+    <!-- Indicador de carga -->
+    <div id="loading-indicator" class="loading-indicator" style="display: none;">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Cargando resultados...</p>
+        </div>
+    </div>
+    
+    <!-- Mensaje de no resultados -->
+    <div id="no-results" class="no-results" style="display: none;">
+        <div class="no-results-content">
+            <i class="fas fa-search"></i>
+            <h3>No se encontraron resultados</h3>
+            <p>Intenta ajustar los filtros o términos de búsqueda</p>
+        </div>
     </div>
 </main>
 
@@ -429,35 +440,237 @@
         white-space: nowrap;
     }
     
-    .form-control-sm {
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: 1px solid #ddd;
-        font-size: 0.85rem;
-        height: 32px;
-    }
+         .form-control-sm {
+         padding: 5px 10px;
+         border-radius: 4px;
+         border: 1px solid #ddd;
+         font-size: 0.85rem;
+         height: 32px;
+     }
+     
+     /* Estilos para filtros dinámicos */
+     .search-loading {
+         position: absolute;
+         right: 15px;
+         top: 50%;
+         transform: translateY(-50%);
+         color: #1e5799;
+     }
+     
+     .loading-indicator {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         padding: 40px 20px;
+         background: #fff;
+     }
+     
+     .loading-spinner {
+         text-align: center;
+         color: #1e5799;
+     }
+     
+     .loading-spinner i {
+         font-size: 2rem;
+         margin-bottom: 10px;
+     }
+     
+     .loading-spinner p {
+         margin: 0;
+         font-size: 1rem;
+         color: #666;
+     }
+     
+     .no-results {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         padding: 60px 20px;
+         background: #fff;
+     }
+     
+     .no-results-content {
+         text-align: center;
+         color: #666;
+     }
+     
+     .no-results-content i {
+         font-size: 3rem;
+         color: #ddd;
+         margin-bottom: 15px;
+     }
+     
+     .no-results-content h3 {
+         margin: 0 0 10px 0;
+         color: #333;
+     }
+     
+     .no-results-content p {
+         margin: 0;
+         font-size: 1rem;
+     }
+     
+     /* Animación de fade para las tarjetas */
+     .beca-card {
+         animation: fadeIn 0.3s ease-in;
+     }
+     
+     @keyframes fadeIn {
+         from {
+             opacity: 0;
+             transform: translateY(10px);
+         }
+         to {
+             opacity: 1;
+             transform: translateY(0);
+         }
+     }
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Variables globales
+        let searchTimeout;
+        const searchInput = document.getElementById('search-input');
+        const tipoFilter = document.getElementById('tipo-filter');
+        const estadoFilter = document.getElementById('estado-filter');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const becasContainer = document.getElementById('becas-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const noResults = document.getElementById('no-results');
+        const searchLoading = document.getElementById('search-loading');
+        
         // Aplicar filtros seleccionados si existen en la URL
         const urlParams = new URLSearchParams(window.location.search);
         
-        if(urlParams.has('tipo_beca')) {
-            document.getElementById('tipo_beca').value = urlParams.get('tipo_beca');
+        if(urlParams.has('tipo')) {
+            tipoFilter.value = urlParams.get('tipo');
         }
         
-        if(urlParams.has('promedio')) {
-            document.getElementById('promedio').value = urlParams.get('promedio');
+        if(urlParams.has('estado')) {
+            estadoFilter.value = urlParams.get('estado');
         }
         
-        if(urlParams.has('nombre')) {
-            document.getElementById('nombre').value = urlParams.get('nombre');
+        if(urlParams.has('search')) {
+            searchInput.value = urlParams.get('search');
         }
+        
+        // Función para actualizar la URL sin recargar la página
+        function updateURL(params) {
+            const url = new URL(window.location);
+            Object.keys(params).forEach(key => {
+                if (params[key] === '' || params[key] === null) {
+                    url.searchParams.delete(key);
+                } else {
+                    url.searchParams.set(key, params[key]);
+                }
+            });
+            window.history.pushState({}, '', url);
+        }
+        
+        // Función para mostrar/ocultar indicadores
+        function showLoading() {
+            loadingIndicator.style.display = 'flex';
+            becasContainer.style.display = 'none';
+            noResults.style.display = 'none';
+        }
+        
+        function hideLoading() {
+            loadingIndicator.style.display = 'none';
+            becasContainer.style.display = 'grid';
+        }
+        
+        function showNoResults() {
+            loadingIndicator.style.display = 'none';
+            becasContainer.style.display = 'none';
+            noResults.style.display = 'flex';
+        }
+        
+                 // Función para realizar la búsqueda AJAX
+         function performSearch() {
+             const searchTerm = searchInput.value.trim();
+             const tipo = tipoFilter.value;
+             const estado = estadoFilter.value;
+             
+             // Actualizar URL
+             updateURL({
+                 search: searchTerm,
+                 tipo: tipo,
+                 estado: estado
+             });
+             
+             // Mostrar indicador de carga
+             showLoading();
+             
+             // Construir URL con parámetros
+             const params = new URLSearchParams();
+             if (searchTerm) params.append('search', searchTerm);
+             if (tipo) params.append('tipo', tipo);
+             if (estado) params.append('estado', estado);
+             
+             const url = `{{ route('becas.index') }}?${params.toString()}`;
+             
+             // Realizar petición AJAX
+             fetch(url, {
+                 headers: {
+                     'X-Requested-With': 'XMLHttpRequest',
+                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                 }
+             })
+            .then(response => response.text())
+                         .then(html => {
+                 // La respuesta AJAX ya contiene solo las tarjetas
+                 if (html.trim() !== '') {
+                     becasContainer.innerHTML = html;
+                     hideLoading();
+                 } else {
+                     showNoResults();
+                 }
+             })
+            .catch(error => {
+                console.error('Error en la búsqueda:', error);
+                hideLoading();
+                showNoResults();
+            });
+        }
+        
+        // Event listeners para filtros dinámicos
+        
+        // Búsqueda con debounce (esperar 500ms después de que el usuario deje de escribir)
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchLoading.style.display = 'block';
+            
+            searchTimeout = setTimeout(() => {
+                performSearch();
+                searchLoading.style.display = 'none';
+            }, 500);
+        });
+        
+        // Filtros de tipo y estado (cambio inmediato)
+        tipoFilter.addEventListener('change', performSearch);
+        estadoFilter.addEventListener('change', performSearch);
         
         // Limpiar filtros
-        document.querySelector('.btn-reset').addEventListener('click', function() {
-            window.location.href = "{{ route('becas.index') }}";
+        clearFiltersBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Limpiar campos
+            searchInput.value = '';
+            tipoFilter.value = '';
+            estadoFilter.value = '';
+            
+            // Actualizar URL
+            updateURL({});
+            
+            // Realizar búsqueda
+            performSearch();
+        });
+        
+        // Prevenir envío del formulario
+        document.getElementById('filters-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            performSearch();
         });
     });
 </script>

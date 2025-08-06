@@ -29,9 +29,9 @@ public function store(Request $request)
 
     if ($request->hasFile('imagen') && $request->file('imagen')->isValid()) {
         try {
-            // Subir imagen a Cloudinary
+            // Subir imagen a Cloudinary usando la facade
             $uploadedFile = $request->file('imagen');
-            $cloudinaryResponse = cloudinary()->upload($uploadedFile->getRealPath(), [
+            $cloudinaryResponse = Cloudinary::upload($uploadedFile->getRealPath(), [
                 'folder' => 'noticias', // Opcional: carpeta en Cloudinary
                 'transformation' => [
                     'width' => 800,
@@ -54,7 +54,7 @@ public function store(Request $request)
             'contenido' => $validated['contenido'],
             'fechaCreacion' => now(),
             'fechaPublicacion' => $validated['fechaPublicacion'],
-            'activo' => false,
+            'activo' => true,
             'imagenLocalPath' => null, // Ya no guardamos localmente
             'imagenURL' => $imagenURL // Guardamos la URL de Cloudinary
         ]);
@@ -92,7 +92,7 @@ public function edit($id)
         $validated = $request->validate([
             'titulo' => 'required|string|max:255',
             'contenido' => 'required|string',
-            'fechaPublicacion' => 'required|date|after_or_equal:now',
+            'fechaPublicacion' => 'required|date',
             'imagen' => 'nullable|image|mimes:jpeg,png,gif|max:2048',
             'activo' => 'required|boolean',
             'remove_image' => 'nullable|boolean'
@@ -110,9 +110,9 @@ public function edit($id)
             }
             $imagenURL = null;
         } elseif ($request->hasFile('imagen') && $request->file('imagen')->isValid()) {
-            // Subir nueva imagen a Cloudinary
+            // Subir nueva imagen a Cloudinary usando la facade
             $uploadedFile = $request->file('imagen');
-            $cloudinaryResponse = cloudinary()->upload($uploadedFile->getRealPath(), [
+            $cloudinaryResponse = Cloudinary::upload($uploadedFile->getRealPath(), [
                 'folder' => 'noticias',
                 'transformation' => [
                     'width' => 800,
@@ -123,10 +123,6 @@ public function edit($id)
             
             $imagenURL = $cloudinaryResponse->getSecurePath();
             
-            // Eliminar imagen anterior de Cloudinary si existe
-            if ($noticia->imagenURL) {
-                // Lógica para eliminar la imagen anterior
-            }
         }
 
         $noticia->update([
